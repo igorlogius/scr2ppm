@@ -1,18 +1,5 @@
 /**
  * desciption: make screenshot from parts of your desktop as portable pixmap data
- * build: cc scr2ppm.c -lX11 -o scr2ppm
- * usage: ./src2ppm [-h] [-s] [-w] [-d %d]
- *         -h : display help
- *         -w : select window to screenshot
- *         -s : select area to screenshot
- *         -d : set delay in %d seconds
- *         If -w and -s are not set, the selection will default to the entire desktop
- * examples:
- * 	    scr2ppm > desktop.ppm
- * 	    src2ppm -d 5 > desktop_after_5_seconds.ppm
- * 	    src2ppm -w > select_window.ppm
- * 	    src2ppm -s > select_area.ppm
- * 	    src2ppm -s -d 5 > select_area_after_5_seconds.ppm
  * repo: https://github.com/igorlogius/scr2ppm
  * author: https://github.com/igorlogius
  * refs: https://en.wikipedia.org/wiki/Netpbm#PPM_example
@@ -34,6 +21,16 @@ extern char* optarg;
 typedef struct {
     int w,h,x,y;
 } Rect;
+
+void
+printRect(Rect *rect){
+    fprintf(stderr,"x %d, y %d, w %d, h %d\n", rect->x, rect->y, rect->w, rect->h);
+}
+
+void
+printXWinAttr(XWindowAttributes *wa){
+    fprintf(stderr,"x %d, y %d, w %d, h %d\n", wa->x, wa->y, wa->width, wa->height );
+}
 
 void
 usage(
@@ -69,19 +66,86 @@ usage(
 int
 getWindowGeometry(
         Display *disp,
+        Window *root,
         Window *window,
         Rect *rect
-) {
+        ) {
     XWindowAttributes window_attributes_return;
 
     // https://tronche.com/gui/x/xlib/introduction/errors.html#Status
     int status = XGetWindowAttributes(disp, *window, &window_attributes_return);
 
     if (status != 0) {
+        //fprintf(stderr, "border width: %d\n", window_attributes_return.border_width);
         rect->w = window_attributes_return.width;
         rect->h = window_attributes_return.height;
         rect->x = window_attributes_return.x;
         rect->y = window_attributes_return.y;
+
+        if(rect->x < 0){
+            printRect(rect);
+            fprintf(stderr,"[WARN] Selected Window partially out of bounds of the display area, the non visible part will not be captured (POOB-X)\n");
+            int abs_x = abs(rect->x);
+            rect->x = 0;
+            rect->w -= (abs_x);
+            printRect(rect);
+        }
+
+        if(rect->y < 0){
+            printRect(rect);
+            fprintf(stderr,"[WARN] Selected Window partially out of bounds of the display area, the non visible part will not be captured (POOB-Y)\n");
+            int abs_y = abs(rect->y);
+            rect->y = 0;
+            rect->h -= (abs_y);
+            printRect(rect);
+        }
+
+        if(root != NULL){
+            XWindowAttributes window_attributes_return_root;
+            int root_status = XGetWindowAttributes(disp, *root, &window_attributes_return_root);
+            if(root_status != 0) {
+                //Rect root_rect = { window_attributes_return_root.width, window_attributes_return_root.height, window_attributes_return_root.x , window_attributes_return_root.y };
+
+                //fprintf(stderr, "root border width: %d\n", window_attributes_return_root.border_width);
+                //printXWinAttr(&window_attributes_return_root);
+
+                if(rect->x > window_attributes_return_root.width){
+                    fprintf(stderr,"[ERRO] Selected Window is completly out of bounds of the display area and can not be captured (COOB-X)\n");
+                    // window not visible
+                    return -1;
+                }
+                if(rect->y > window_attributes_return_root.height){
+                    // window not visible
+                    fprintf(stderr,"[ERRO] Selected Window is completly out of bounds of the display area and can not be captured (COOB-Y)\n");
+                    return -1;
+                }
+
+                if((rect->x+rect->w) > window_attributes_return_root.width){
+                    printRect(rect);
+                    fprintf(stderr,"[WARN] Selected Window is partially out of bounds of the display area, the non visible part will not be captured (POOB-RIGHT)\n");
+                    rect->w -= ((rect->x + rect->w)  - window_attributes_return_root.width);
+                    printRect(rect);
+                }
+
+                if((rect->y+rect->h) > window_attributes_return_root.height){
+                    printRect(rect);
+                    fprintf(stderr,"[WARN] Selected Window is partially out of bounds of the display area, the non visible part will not be captured (POOB-BOTTOM)\n");
+                    rect->h -= ((rect->y + rect->h)  - window_attributes_return_root.height);
+                    printRect(rect);
+                }
+            }
+        }
+
+        if(rect->w < 1){
+            fprintf(stderr,"[ERRO] selected window width to small, nothing to capture (W<1))\n");
+            return -1;
+        }
+
+        if(rect->h < 1){
+            fprintf(stderr,"[ERRO] selected window height to small, nothing to capture (H<1)\n");
+            return -1;
+        }
+
         return 0;
     }
     return -1;
@@ -111,6 +175,8 @@ selectWindow(
         return -1;
     }
 
+    //XWindowAttributes win_attr;
+
     while (1) {
         while (XPending(disp)) {
             XNextEvent(disp, &ev);
@@ -119,7 +185,7 @@ selectWindow(
                     XUngrabPointer(disp, CurrentTime);
                     //XFreeCursor(disp, cursor);
                     XFlush(disp);
-                    return getWindowGeometry(disp, &ev.xbutton.subwindow, rect);
+                    return getWindowGeometry(disp, root, &ev.xbutton.subwindow, rect);
                 default:
                     break;
             }
@@ -182,13 +248,7 @@ selectArea(
                     if (btn_pressed) {
                         if (rect_w) {
                             /* re-draw the last rect to clear it */
-                            //XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
-                            //XClearWindow(disp, *root);
-                            //XFlush(disp);
-                            //XFillRectangle(disp, *root, gc, rect_x+100,rect_y+100, rect_w+100,rect_h+100);
-                            //XClearArea(disp, *root, rect_x,rect_y, rect_w,rect_h, False);
                             XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
-                            //XFillRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
                         } else {
                             /* Change the cursor to show we're selecting a region */
                             /*
@@ -213,7 +273,6 @@ selectArea(
                         }
 
                         XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
-                        //XFillRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
                         XFlush(disp);
                     }
                     break;
@@ -236,7 +295,6 @@ selectArea(
     /* clear the drawn rectangle */
     if (rect_w) {
         XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
-        //XFillRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
         XFlush(disp);
     }
 
@@ -251,7 +309,6 @@ selectArea(
 	XUngrabPointer(disp, CurrentTime);
     XFreeGC(disp, gc);
     XSync(disp,True);
-
 
     rw = ev.xbutton.x - rx;
     rh = ev.xbutton.y - ry;
@@ -310,10 +367,9 @@ main(
 
     Window root = XDefaultRootWindow(disp);
 
-
     switch (mode)
     {
-        case 0: ret = getWindowGeometry(disp, &root, &rect); break;
+        case 0: ret = getWindowGeometry(disp, NULL, &root, &rect); break;
         case 1: ret = selectWindow(disp, &root, &rect);       break;
         case 2: ret = selectArea(disp, &root, &rect);         break;
         default: usage(argv[0],"");break;
@@ -323,29 +379,29 @@ main(
     if( ret != 0) {
         XDestroyWindow(disp, root);
         XCloseDisplay(disp);
-        usage(argv[0], "ERR: failed to get selection");
+        return -1;
     }
 
     // wait for delay seconds / timeout
     if(delay > 0) { sleep(delay); }
 
     /**
-     *
      * TODO:
      * - add a countdown
      * - add / keep the the border
-     *
      * */
 
     // get Image Data
+    printRect(&rect);
     image = XGetImage(disp, root, rect.x, rect.y, rect.w, rect.h, AllPlanes, ZPixmap);
 
+    //XFreeGC(disp, gc);
+    XDestroyWindow(disp, root);
+    XCloseDisplay(disp);
 
     if (image == NULL) {
-        XDestroyWindow(disp, root);
-        XCloseDisplay(disp);
-        //XFreeGC(disp, gc);
-        usage(argv[0], "ERR: failed to get image data");
+        fprintf(stderr,"ERROR: failed to get image data");
+        return -1;
     }
 
     // write PPM P6 (binary) header
@@ -365,8 +421,6 @@ main(
 
     // release image memory
     XDestroyImage(image);
-    XDestroyWindow(disp, root);
-    XCloseDisplay(disp);
 
     return 0;
 }
