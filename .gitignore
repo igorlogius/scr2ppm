@@ -1,1 +1,5 @@
 /scr2ppm
+/.flatpak-builder/
+/flatpak-build-dir/
+/io.github.com.igorlogius.scr2ppm.yml
+/*.tar.gz

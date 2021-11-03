@@ -44,21 +44,22 @@ usage(
 	printf("%s",msg);
 	printf("\n");
 	printf("(SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)\n");
-	printf("usage %s -[s|w] [-d %%d]\n",pname);
 	printf("\n");
+	printf("usage %s -[s|w|a] [-d %%d]\n",pname);
+	printf("\n");
+	printf("  -s := capture the entire screen / desktop");
+	printf("  -w := select and capture a window\n");
+	printf("  -a := select and capture a custom area\n");
 	printf("  -d := delay in seconds");
-	printf("  -w := click inside any window\n");
-	printf("  -s := draw custom rectangle area\n");
-	printf("\n");
-	printf("If -s and -w are not set, the entire desktop will be selected\n");
 	printf("\n");
 	printf("\n");
 	printf("Examples: \n");
-	printf("	%s // screenshot entire desktop immediately\n",pname);
-	printf("	%s -d 10 // screenshot entire desktop after 10 seconds\n",pname);
-	printf("	%s -s // screenshot selected area immediately\n",pname);
-	printf("	%s -d 5 -w // screenshot window after 5 seconds\n",pname);
-	printf("	%s -d 3 -s // screenshot custom area after 3 seconds\n",pname);
+	printf("	%s -d        # screenshot entire desktop immediately\n",pname);
+	printf("	%s -d -t 10  # screenshot entire desktop after 10 seconds\n",pname);
+	printf("	%s -a        # screenshot a custom area immediately, after selection\n",pname);
+	printf("	%s -w -t 5   # screenshot a window after 5 seconds\n",pname);
+	printf("	%s -a -t 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
+	printf("	%s           # will output this usage message, since -w,-a or -d is required\n",pname);
 	printf("\n");
 
 	// terminate program
@@ -291,14 +292,15 @@ main(
     XImage *image = NULL;
 
     // get options
-    while((opt = getopt(argc, argv, "hwsd:")) != -1)
+    while((opt = getopt(argc, argv, "swad:")) != -1)
     {
         switch (opt)
         {
-            case 'h': usage(argv[0],"");break;
+            case 's': mode = 0;break;
             case 'w': mode = 1;break;
-            case 's': mode = 2;break;
+            case 'a': mode = 2;break;
             case 'd': delay = atoi(optarg);break;
+            default: usage(argv[0],"");break;
         }
     }
 
@@ -311,9 +313,9 @@ main(
 
     switch (mode)
     {
-        case 1: ret = selectWindow(disp, &root, &rect);      break;
-        case 2: ret = selectArea(disp, &root, &rect);   break;
-        default:ret = getWindowGeometry(disp, &root, &rect); break;
+        case 1: ret = selectWindow(disp, &root, &rect);       break;
+        case 2: ret = selectArea(disp, &root, &rect);         break;
+        default: ret = getWindowGeometry(disp, &root, &rect); break;
     }
 
     // error getting selection
