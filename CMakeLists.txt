@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.6)
+project(scr2ppm)
+set(SOURCE_FILES scr2ppm.c)
+add_executable(scr2ppm ${SOURCE_FILES})
+find_package(X11 REQUIRED)
+message(STATUS "X11_FOUND = ${X11_FOUND}")
+message(STATUS "X11_INCLUDE_DIR = ${X11_INCLUDE_DIR}")
+message(STATUS "X11_LIBRARIES = ${X11_LIBRARIES}")
+include_directories(${X11_INCLUDE_DIR})
+link_directories(${X11_LIBRARIES})
+target_link_libraries(scr2ppm ${X11_LIBRARIES})
+

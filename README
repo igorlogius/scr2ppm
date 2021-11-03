@@ -1,0 +1,59 @@
+#!/bin/bash
+
+##
+#
+#  (SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)
+#  usage ./scr2ppm -[s|w] [-d %d]
+#
+#  -d := delay in seconds  -w := click inside any window
+#  -s := draw custom rectangle area
+#
+#  If -s and -w are not set, the entire desktop will be selected
+#
+#
+#  Examples:
+# 	./scr2ppm // screenshot entire desktop immediately
+# 	./scr2ppm -d 10 // screenshot entire desktop after 10 seconds
+# 	./scr2ppm -s // screenshot selected area immediately
+# 	./scr2ppm -d 5 -w // screenshot window after 5 seconds
+# 	./scr2ppm -d 3 -s // screenshot custom area after 3 seconds
+#
+##
+
+CWD=$PWD
+
+MISSING_REQ=0
+for req in mktemp wget unzip;do
+	type $req >/dev/null 2>&1 || { echo >&2 "Missing dependency: $req"; MISSING_REQ=1; }
+done
+
+[ $MISSING_REQ -ne 0 ] && { echo "Aborting because of missing dependency"; exit 1; }
+
+ZIPFILE=$(mktemp)
+EXTRDIR=$(mktemp -d)
+
+wget -q --show-progress https://github.com/igorlogius/src2ppm/archive/main.zip -O $ZIPFILE
+
+unzip -j $ZIPFILE "src2ppm-main/scr2ppm.c" -d $EXTRDIR 
+unzip -j $ZIPFILE "src2ppm-main/CMakeLists.txt" -d $EXTRDIR 
+
+cd $EXTRDIR
+
+type cmake >/dev/null 2>&1;CM_RET=$?
+type cc >/dev/null 2>&1;CC_RET=$?
+
+if [ $CM_RET -eq 0 ];then
+    cmake . && make
+elif [ $CC_RET -eq 0];then
+    cc ./scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
+fi
+
+if [ -x ./scr2ppm ];then
+	mv scr2ppm $CWD/; 
+	echo "build done"
+else
+	echo "build failed";
+fi
+
+rm -rf $EXTRDIR/ $ZIPFILE
+
