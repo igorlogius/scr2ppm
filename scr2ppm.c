@@ -54,8 +54,8 @@ usage(
 	printf("\n");
 	printf("\n");
 	printf("Examples: \n");
-	printf("	%s -d        # screenshot entire desktop immediately\n",pname);
-	printf("	%s -d -t 10  # screenshot entire desktop after 10 seconds\n",pname);
+	printf("	%s -s        # screenshot entire screen / desktop immediately\n",pname);
+	printf("	%s -s -t 10  # screenshot entire screen / desktop after 10 seconds\n",pname);
 	printf("	%s -a        # screenshot a custom area immediately, after selection\n",pname);
 	printf("	%s -w -t 5   # screenshot a window after 5 seconds\n",pname);
 	printf("	%s -a -t 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
@@ -313,9 +313,10 @@ main(
 
     switch (mode)
     {
+        case 0: ret = getWindowGeometry(disp, &root, &rect); break;
         case 1: ret = selectWindow(disp, &root, &rect);       break;
         case 2: ret = selectArea(disp, &root, &rect);         break;
-        default: ret = getWindowGeometry(disp, &root, &rect); break;
+        default: usage(argv[0],"");break;
     }
 
     // error getting selection
