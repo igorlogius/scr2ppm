@@ -2,12 +2,13 @@ app-id: io.github.igorlogius.scr2ppm
 runtime: org.freedesktop.Platform
 runtime-version: '21.08'
 sdk: org.freedesktop.Sdk
-command: scr2ppm
+command: scr2ppm-wrapper
 rename-icon: scr2ppm
 rename-desktop-file: scr2ppm.desktop
 rename-appdata-file: scr2ppm.metainfo.xml
 finish-args:
   - --socket=x11
+  - --share=ipc
 modules:
   - name: scr2ppm
     sources:
@@ -18,6 +19,7 @@ modules:
     build-commands:
       - cc scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
       - install -D scr2ppm /app/bin/scr2ppm
+      - install -D scr2ppm-wrapper /app/bin/scr2ppm-wrapper
       - install -D scr2ppm.desktop /app/share/applications/scr2ppm.desktop
       - install -D scr2ppm.metainfo.xml /app/share/metainfo/scr2ppm.metainfo.xml
       - install -D scr2ppm.png /app/share/icons/hicolor/128x128/apps/scr2ppm.png
