@@ -1,24 +1,42 @@
 #!/bin/bash
 
-##
-#
-#  (SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)
-#  usage ./scr2ppm -[s|w] [-d %d]
-#
-#  -d := delay in seconds  -w := click inside any window
-#  -s := draw custom rectangle area
-#
-#  If -s and -w are not set, the entire desktop will be selected
-#
-#
-#  Examples:
-# 	./scr2ppm // screenshot entire desktop immediately
-# 	./scr2ppm -d 10 // screenshot entire desktop after 10 seconds
-# 	./scr2ppm -s // screenshot selected area immediately
-# 	./scr2ppm -d 5 -w // screenshot window after 5 seconds
-# 	./scr2ppm -d 3 -s // screenshot custom area after 3 seconds
-#
-##
+# (SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)
+
+The tiniest X11 screen capture aka. screenshot utility
+
+# Install and run via flatpak 
+
+```
+flatpak install io.github.igorlogius.scr2ppm
+flatpak run io.github.igorlogius.scr2ppm
+```
+
+# Arguments (-s,-a or -w) required, (-d) optional
+
+```
+  -s := capture the entire screen aka. desktop  
+  -a := capture a custom area 
+  -w := capture a window  
+  -d := add a delay in seconds (optional) 
+```
+
+# Output 
+
+The output will be send to STDOUT (STanDard OUTput) and can be writen to a Portable PixMap (PPM) file 
+or directly piped into another programm like (`convert`) process it further
+
+# Examples 
+
+```
+ 	scr2ppm -s > desktop.ppm           // screenshot entire desktop immediately 
+    scr2ppm -s | convert - desktop.png // make screenshot and save it via convert as a png
+ 	scr2ppm -s -d 10 // screenshot entire desktop after 10 seconds
+ 	scr2ppm -a       // screenshot selected area immediately
+ 	scr2ppm -w -d 5  // screenshot window after 5 seconds
+ 	scr2ppm -a -d 3  // screenshot custom area after 3 seconds
+    
+```
+# Manual Build 
 
 CWD=$PWD
 
@@ -57,3 +75,4 @@ fi
 
 rm -rf $EXTRDIR/ $ZIPFILE
 
+# 
