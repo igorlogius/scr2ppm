@@ -9,13 +9,15 @@ modules:
   - name: scr2ppm
     buildsystem: simple
     build-commands:
-      - cc ./scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
+      - ls -l
+      - cc scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
       - install -D scr2ppm /app/bin/scr2ppm
       - install -D scr2ppm.desktop /app/share/applications/scr2ppm.desktop
-      - install -D scr2ppm-64.png /app/share/icons/hicolor/64x64/apps/scr2pp-64.png
-      - install -D scr2ppm-128.png /app/share/icons/hicolor/128x128/apps/scr2pp-128.png
+      - install -D scr2ppm-64.png /app/share/icons/hicolor/64x64/apps/scr2ppm-64.png
+      - install -D scr2ppm-128.png /app/share/icons/hicolor/128x128/apps/scr2ppm-128.png
       - install -D scr2ppm.metainfo.xml /app/share/metainfo/scr2ppm.metainfo.xml
     sources:
       - type: git
         url: https://github.com/igorlogius/scr2ppm.git
-        commit: a4c2a981cf08f8e33a2e512fdebdd69ac3ea87d6 
+        branch: main
+        commit: 644e56d9d27ee8a86452746302c3f25718960198
