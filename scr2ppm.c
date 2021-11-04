@@ -44,10 +44,10 @@ usage(
 	printf("\n");
 	printf("usage %s -[s|w|a] [-d %%d]\n",pname);
 	printf("\n");
-	printf("  -s := capture the entire screen / desktop");
+	printf("  -s := capture the entire screen / desktop\n");
 	printf("  -w := select and capture a window\n");
 	printf("  -a := select and capture a custom area\n");
-	printf("  -d := delay in seconds");
+	printf("  -d := add a delay in seconds");
 	printf("\n");
 	printf("\n");
 	printf("Examples: \n");
