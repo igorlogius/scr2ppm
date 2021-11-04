@@ -9,6 +9,7 @@ rename-appdata-file: scr2ppm.metainfo.xml
 finish-args:
   - --socket=x11
   - --share=ipc
+  - --filesystem=~/Screenshots:create
 modules:
   - name: scr2ppm
     sources:
