@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<component type="desktop-application">
+    <id>io.github.igorlogius.scr2ppm</id>
+    <metadata_license>0BSD</metadata_license>
+    <project_license>MIT</project_license>
+    <content_rating type="oars-1.1" />
+    <developer_name>igorlogius</developer_name>
+    <categories>
+        <category>Utilities</category>
+    </categories>
+    <name>Screen to Portable PixMap</name>
+    <summary>The tiniest X11 screen capture aka. screenshot utility</summary>
+    <description>
+        <p>The tiniest X11 screen capture aka. screenshot utility</p>
+    </description>
+    <launchable type="desktop-id">scr2ppm.desktop</launchable>
+
+    <screenshots>
+        <screenshot type="default">
+            <caption>Logo of scr2ppm</caption>
+            <image>https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm-128.png</image>
+        </screenshot>
+    </screenshots>
+
+    <url type="homepage">https://github.com/igorlogius/scr2ppm</url>
+    <url type="bugtracker">https://github.com/igorlogius/scr2ppm/issues</url>
+
+    <releases>
+        <release version="1.0.3" date="2021-11-04">
+            <description>
+                <ul>
+                    <li>inital flatpak release</li>
+                </ul>
+            </description>
+        </release>
+    </releases>
+
+    <icon type="remote" height="64" width="64">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm-64.png</icon>
+    <icon type="remote" height="128" width="128">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm-128.png</icon>
+
+    <update_contact>https://github.com/igorlogius</update_contact>    
+</component>

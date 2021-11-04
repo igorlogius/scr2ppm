@@ -1,0 +1,35 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=scr2ppm
+Comment=The tiniest X11 screen capture aka. screenshot utility
+TryExec=scr2ppm
+Exec=scr2ppm
+Icon=scr2ppm-128.png
+Terminal=true
+Categories=GTK;Utility;
+Actions=Screen;Window;Area;Screen10;Window10;Area10;
+
+[Desktop Action Screen]
+Exec=scr2ppm -s
+Name=Capture Screen
+
+[Desktop Action Window]
+Exec=scr2ppm -w
+Name=Capture Screen
+
+[Desktop Action Area]
+Exec=scr2ppm -a
+Name=Capture Screen
+
+[Desktop Action Screen10]
+Exec=scr2ppm -s -d 10
+Name=Capture Screen (10s delay)
+
+[Desktop Action Window10]
+Exec=scr2ppm -w -d 10
+Name=Capture Window (10s delay)
+
+[Desktop Action Area10]
+Exec=scr2ppm -a -d 10
+Name=Capture Area (10s delay)
