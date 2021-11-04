@@ -19,7 +19,7 @@
     <screenshots>
         <screenshot type="default">
             <caption>Logo of scr2ppm</caption>
-            <image>https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-128.png</image>
+            <image>https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm.png</image>
         </screenshot>
     </screenshots>
 
@@ -36,8 +36,7 @@
         </release>
     </releases>
 
-    <icon type="remote" height="64" width="64">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm-64.png</icon>
-    <icon type="remote" height="128" width="128">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm-128.png</icon>
+    <icon type="remote" height="128" width="128">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm.png</icon>
 
     <update_contact>https://github.com/igorlogius</update_contact>    
 </component>
