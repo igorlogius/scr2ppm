@@ -1,0 +1,3 @@
+#!/bin/bash
+FILE=~/"Screenshot-$(date +%F_%T).ppm"
+scr2ppm $@ > "$FILE"
