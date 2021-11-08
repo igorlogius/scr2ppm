@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 DIR=$(xdg-user-dir PICTURES)
 FILE="$DIR/Screenshot-$(date +%F_%T).ppm"
 scr2ppm $@ > "$FILE"
