@@ -38,7 +38,7 @@ usage(
 	const char* msg
 ){
 	fprintf(stderr,"\n");
-	fprintf(stderr,"%s",msg);
+	fprintf(stderr,"%s\n",msg);
 	fprintf(stderr,"\n");
 	fprintf(stderr,"(SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)\n");
 	fprintf(stderr,"\n");
@@ -328,7 +328,7 @@ main(
     int delay = -1; //
     int mode = -1;  //
     int opt = -1;   //
-    int opterr = 0; // supress invalid option -- 'xyz' output
+    opterr = 0; // supress invalid option -- 'xyz' output
     int x = -1;
     int y = -1;
     unsigned long pixel = -1;
