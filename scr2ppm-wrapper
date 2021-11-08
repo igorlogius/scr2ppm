@@ -1,3 +1,4 @@
 #!/bin/bash
-FILE=~/Screenshots/Screenshot-$(date +%F_%T).ppm
+DIR=$(xdg-user-dir PICTURES)
+FILE="$DIR/Screenshot-$(date +%F_%T).ppm"
 scr2ppm $@ > "$FILE"
