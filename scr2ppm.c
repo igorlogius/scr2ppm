@@ -379,15 +379,17 @@ main(
     // get Image Data
     //printRect(&rect);
     image = XGetImage(disp, root, rect.x, rect.y, rect.w, rect.h, AllPlanes, ZPixmap);
-
-    XBell(disp,0);
     XDestroyWindow(disp, root);
-    XCloseDisplay(disp);
 
     if (image == NULL) {
         fprintf(stderr,"ERROR: failed to get image data");
         return -1;
     }
+
+    if(delay > 0) {sleep(delay);}
+
+    XBell(disp,0);
+    XCloseDisplay(disp);
 
     // write PPM P6 (binary) header
     fprintf(stdout, "P6\n%d %d\n255\n", rect.w, rect.h);
