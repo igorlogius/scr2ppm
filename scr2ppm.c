@@ -52,11 +52,11 @@ usage(
 	fprintf(stderr,"\n");
 	fprintf(stderr,"Examples: \n");
 	fprintf(stderr,"	%s -s        # screenshot entire screen / desktop immediately\n",pname);
-	fprintf(stderr,"	%s -s -t 10  # screenshot entire screen / desktop after 10 seconds\n",pname);
+	fprintf(stderr,"	%s -s -d 10  # screenshot entire screen / desktop after 10 seconds\n",pname);
 	fprintf(stderr,"	%s -a        # screenshot a custom area immediately, after selection\n",pname);
-	fprintf(stderr,"	%s -w -t 5   # screenshot a window after 5 seconds\n",pname);
-	fprintf(stderr,"	%s -a -t 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
-	fprintf(stderr,"	%s           # will output this usage message, since -w,-a or -d is required\n",pname);
+	fprintf(stderr,"	%s -w -d 5   # screenshot a window after 5 seconds\n",pname);
+	fprintf(stderr,"	%s -a -d 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
+	fprintf(stderr,"	%s           # will output this usage message, since -s,-w or -a is required\n",pname);
 	fprintf(stderr,"\n");
 
 	// terminate program
