@@ -29,7 +29,7 @@ printRect(Rect *rect){
 
 void
 printXWinAttr(XWindowAttributes *wa){
-    fprintf(stderr,"x %d, y %d, w %d, h %d\n", wa->x, wa->y, wa->width, wa->height );
+    fprintf(stderr,"x %d, y %d, w %d, h %d\n", wa->x, wa->y, wa->width, wa->height);
 }
 
 void
@@ -37,27 +37,27 @@ usage(
 	const char* pname,
 	const char* msg
 ){
-	printf("\n");
-	printf("%s",msg);
-	printf("\n");
-	printf("(SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)\n");
-	printf("\n");
-	printf("usage %s -[s|w|a] [-d %%d]\n",pname);
-	printf("\n");
-	printf("  -s := capture the entire screen / desktop\n");
-	printf("  -w := select and capture a window\n");
-	printf("  -a := select and capture a custom area\n");
-	printf("  -d := add a delay in seconds");
-	printf("\n");
-	printf("\n");
-	printf("Examples: \n");
-	printf("	%s -s        # screenshot entire screen / desktop immediately\n",pname);
-	printf("	%s -s -t 10  # screenshot entire screen / desktop after 10 seconds\n",pname);
-	printf("	%s -a        # screenshot a custom area immediately, after selection\n",pname);
-	printf("	%s -w -t 5   # screenshot a window after 5 seconds\n",pname);
-	printf("	%s -a -t 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
-	printf("	%s           # will output this usage message, since -w,-a or -d is required\n",pname);
-	printf("\n");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"%s",msg);
+	fprintf(stderr,"\n");
+	fprintf(stderr,"(SCR)een (to) (P)ortable (P)ix(M)ap - (SCR2PPM)\n");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"usage %s -[s|w|a] [-d %%d]\n",pname);
+	fprintf(stderr,"\n");
+	fprintf(stderr,"  -s := capture the entire screen / desktop\n");
+	fprintf(stderr,"  -w := select and capture a window\n");
+	fprintf(stderr,"  -a := select and capture a custom area\n");
+	fprintf(stderr,"  -d := add a delay in seconds");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"Examples: \n");
+	fprintf(stderr,"	%s -s        # screenshot entire screen / desktop immediately\n",pname);
+	fprintf(stderr,"	%s -s -t 10  # screenshot entire screen / desktop after 10 seconds\n",pname);
+	fprintf(stderr,"	%s -a        # screenshot a custom area immediately, after selection\n",pname);
+	fprintf(stderr,"	%s -w -t 5   # screenshot a window after 5 seconds\n",pname);
+	fprintf(stderr,"	%s -a -t 3   # screenshot a custom area after 3 seconds, after selection\n",pname);
+	fprintf(stderr,"	%s           # will output this usage message, since -w,-a or -d is required\n",pname);
+	fprintf(stderr,"\n");
 
 	// terminate program
 	exit(-1);
@@ -84,7 +84,7 @@ getWindowGeometry(
 
         if(rect->x < 0){
             printRect(rect);
-            fprintf(stderr,"[WARN] Selected Window partially out of bounds of the display area, the non visible part will not be captured (POOB-X)\n");
+            fprintf(stderr,"[WARN] selected window partially out of bounds of the display area, the non visible part will not be captured (POOB-X)\n");
             int abs_x = abs(rect->x);
             rect->x = 0;
             rect->w -= (abs_x);
@@ -93,7 +93,7 @@ getWindowGeometry(
 
         if(rect->y < 0){
             printRect(rect);
-            fprintf(stderr,"[WARN] Selected Window partially out of bounds of the display area, the non visible part will not be captured (POOB-Y)\n");
+            fprintf(stderr,"[WARN] selected window partially out of bounds of the display area, the non visible part will not be captured (POOB-Y)\n");
             int abs_y = abs(rect->y);
             rect->y = 0;
             rect->h -= (abs_y);
@@ -104,32 +104,25 @@ getWindowGeometry(
             XWindowAttributes window_attributes_return_root;
             int root_status = XGetWindowAttributes(disp, *root, &window_attributes_return_root);
             if(root_status != 0) {
-                //Rect root_rect = { window_attributes_return_root.width, window_attributes_return_root.height, window_attributes_return_root.x , window_attributes_return_root.y };
-
-                //fprintf(stderr, "root border width: %d\n", window_attributes_return_root.border_width);
-                //printXWinAttr(&window_attributes_return_root);
-
                 if(rect->x > window_attributes_return_root.width){
-                    fprintf(stderr,"[ERRO] Selected Window is completly out of bounds of the display area and can not be captured (COOB-X)\n");
-                    // window not visible
+                    fprintf(stderr,"[ERRO] selected window is completly out of bounds of the display area and can not be captured (COOB-X)\n");
                     return -1;
                 }
                 if(rect->y > window_attributes_return_root.height){
-                    // window not visible
-                    fprintf(stderr,"[ERRO] Selected Window is completly out of bounds of the display area and can not be captured (COOB-Y)\n");
+                    fprintf(stderr,"[ERRO] selected window is completly out of bounds of the display area and can not be captured (COOB-Y)\n");
                     return -1;
                 }
 
                 if((rect->x+rect->w) > window_attributes_return_root.width){
                     printRect(rect);
-                    fprintf(stderr,"[WARN] Selected Window is partially out of bounds of the display area, the non visible part will not be captured (POOB-RIGHT)\n");
+                    fprintf(stderr,"[WARN] selected window is partially out of bounds of the display area, the non visible part will not be captured (POOB-RIGHT)\n");
                     rect->w -= ((rect->x + rect->w)  - window_attributes_return_root.width);
                     printRect(rect);
                 }
 
                 if((rect->y+rect->h) > window_attributes_return_root.height){
                     printRect(rect);
-                    fprintf(stderr,"[WARN] Selected Window is partially out of bounds of the display area, the non visible part will not be captured (POOB-BOTTOM)\n");
+                    fprintf(stderr,"[WARN] selected window is partially out of bounds of the display area, the non visible part will not be captured (POOB-BOTTOM)\n");
                     rect->h -= ((rect->y + rect->h)  - window_attributes_return_root.height);
                     printRect(rect);
                 }
@@ -163,19 +156,17 @@ selectWindow(
 
     XEvent ev;
 
-    //Cursor cursor /*, cursor2*/;
-    //cursor = XCreateFontCursor(disp, XC_left_ptr);
+    Cursor cursor /*, cursor2*/;
+    cursor = XCreateFontCursor(disp, XC_left_ptr);
     //cursor2 = XCreateFontCursor(disp, XC_lr_angle);
 
     if ((XGrabPointer
                  (disp, *root, False,
                   ButtonPressMask, GrabModeAsync,
-                  GrabModeAsync, *root, None, CurrentTime) != GrabSuccess)) {
-        //printf("couldn't grab pointer:\n");
+                  GrabModeAsync, *root, cursor, CurrentTime) != GrabSuccess)) {
+        fprintf(stderr,"couldn't grab pointer:\n");
         return -1;
     }
-
-    //XWindowAttributes win_attr;
 
     while (1) {
         while (XPending(disp)) {
@@ -183,7 +174,7 @@ selectWindow(
             switch (ev.type) {
                 case ButtonPress:
                     XUngrabPointer(disp, CurrentTime);
-                    //XFreeCursor(disp, cursor);
+                    XFreeCursor(disp, cursor);
                     XFlush(disp);
                     return getWindowGeometry(disp, root, &ev.xbutton.subwindow, rect);
                 default:
@@ -192,7 +183,7 @@ selectWindow(
         }
     }
     XUngrabPointer(disp, CurrentTime);
-    //XFreeCursor(disp, cursor);
+    XFreeCursor(disp, cursor);
     XFlush(disp);
     return -1;
 }
@@ -210,11 +201,11 @@ selectArea(
 
     XEvent ev;
 
-    /*
+    /**/
     Cursor cursor, cursor2;
     cursor = XCreateFontCursor(disp, XC_left_ptr);
     cursor2 = XCreateFontCursor(disp, XC_lr_angle);
-	*/
+	/**/
 
     /**/
     XGCValues gcval;
@@ -222,7 +213,6 @@ selectArea(
     gcval.function = GXxor;
     gcval.background = XBlackPixel(disp, 0);
     gcval.plane_mask = gcval.background ^ gcval.foreground;
-    //gcval.fill_style = FillSolid;
     gcval.subwindow_mode = IncludeInferiors;
 
     GC gc;
@@ -230,12 +220,13 @@ selectArea(
                    GCFunction | GCForeground | GCBackground | GCSubwindowMode,
                    &gcval);
     /**/
+
     /* this XGrab* stuff makes XPending true ? */
     if ((XGrabPointer
                  (disp, *root, False,
                   ButtonMotionMask | ButtonPressMask | ButtonReleaseMask, GrabModeAsync,
-                  GrabModeAsync, *root, /*cursor*/ None, CurrentTime) != GrabSuccess)) {
-        //printf("couldn't grab pointer:");
+                  GrabModeAsync, *root, cursor, CurrentTime) != GrabSuccess)) {
+        fprintf(stderr,"couldn't grab pointer:");
         return -1;
     }
 
@@ -251,11 +242,8 @@ selectArea(
                             XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
                         } else {
                             /* Change the cursor to show we're selecting a region */
-                            /*
-                               XChangeActivePointerGrab(disp,
-                               ButtonMotionMask | ButtonReleaseMask,
-                               cursor2, CurrentTime);
-                             */
+                            XChangeActivePointerGrab(disp, ButtonMotionMask | ButtonReleaseMask, cursor2, CurrentTime);
+                            /**/
                         }
 
                         rect_x = rx;
@@ -292,6 +280,7 @@ selectArea(
             break;
         }
     } // done while
+
     /* clear the drawn rectangle */
     if (rect_w) {
         XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
@@ -299,13 +288,12 @@ selectArea(
     }
 
 	/* reset cursor style */
-	/*
      	XChangeActivePointerGrab(disp,
 		             ButtonMotionMask | ButtonReleaseMask,
                             cursor, CurrentTime);
-	*/
-    //XFreeCursor(disp, cursor);
-    //XFreeCursor(disp, cursor2);
+	/**/
+    XFreeCursor(disp, cursor);
+    XFreeCursor(disp, cursor2);
 	XUngrabPointer(disp, CurrentTime);
     XFreeGC(disp, gc);
     XSync(disp,True);
@@ -327,7 +315,6 @@ selectArea(
     rect->x = rx;
     rect->y = ry;
 
-    XBell(disp,0);
 
     return 0;
 }
@@ -375,15 +362,13 @@ main(
         default: usage(argv[0],"");break;
     }
 
+
     // error getting selection
     if( ret != 0) {
         XDestroyWindow(disp, root);
         XCloseDisplay(disp);
         return -1;
     }
-
-    // wait for delay seconds / timeout
-    if(delay > 0) { sleep(delay); }
 
     /**
      * TODO:
@@ -392,10 +377,10 @@ main(
      * */
 
     // get Image Data
-    printRect(&rect);
+    //printRect(&rect);
     image = XGetImage(disp, root, rect.x, rect.y, rect.w, rect.h, AllPlanes, ZPixmap);
 
-    //XFreeGC(disp, gc);
+    XBell(disp,0);
     XDestroyWindow(disp, root);
     XCloseDisplay(disp);
 
@@ -421,7 +406,6 @@ main(
 
     // release image memory
     XDestroyImage(image);
-
     return 0;
 }
 
