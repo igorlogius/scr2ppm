@@ -28,12 +28,12 @@ or directly piped into another programm like (`convert`) process it further
 # Examples 
 
 ```
- 	scr2ppm -s > desktop.ppm           // screenshot entire desktop immediately 
-    scr2ppm -s | convert - desktop.png // make screenshot and save it via convert as a png
- 	scr2ppm -s -d 10 // screenshot entire desktop after 10 seconds
- 	scr2ppm -a       // screenshot selected area immediately
- 	scr2ppm -w -d 5  // screenshot window after 5 seconds
- 	scr2ppm -a -d 3  // screenshot custom area after 3 seconds
+	scr2ppm -s > desktop.ppm           	// screenshot entire desktop immediately 
+	scr2ppm -s | convert - desktop.png 	// make screenshot and save it via convert as a png
+	scr2ppm -s -d 10 			// screenshot entire desktop after 10 seconds
+	scr2ppm -a       			// screenshot selected area immediately
+	scr2ppm -w -d 5  			// screenshot window after 5 seconds
+	scr2ppm -a -d 3  			// screenshot custom area after 3 seconds
     
 ```
 # Manual Build 
