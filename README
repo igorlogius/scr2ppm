@@ -21,7 +21,7 @@ $ flatpak run io.github.igorlogius.scr2ppm [ARGS]
 one of `-s`,`-a` or `-w` is required and `-d` can be optionally added to add a delay before the capture
 
 ```
-  -s := capture the entire screen aka. desktop  
+  -s := capture the entire screen area
   -a := capture a custom area 
   -w := capture a window  
   -d := add a delay in seconds (optional) 
@@ -35,12 +35,12 @@ or directly piped into another programm like (image/gaphickmagics `convert`) to 
 # Examples 
 
 ```
-	scr2ppm -s > desktop.ppm           	// screenshot entire desktop immediately 
-	scr2ppm -s | convert - desktop.png 	// make screenshot and save it via convert as a png
-	scr2ppm -s -d 10 			// screenshot entire desktop after 10 seconds
-	scr2ppm -a       			// screenshot selected area immediately
-	scr2ppm -w -d 5  			// screenshot window after 5 seconds
-	scr2ppm -a -d 3  			// screenshot custom area after 3 seconds
+	scr2ppm -s > screenshot.ppm           	// screenshot entire screen immediately 
+	scr2ppm -s | convert - screenshot.png 	// make screenshot and save it via convert as a png
+	scr2ppm -s -d 10 			// screenshot entire screen after 10 seconds
+	scr2ppm -a        			// screenshot selected area immediately
+	scr2ppm -w -d 5 		 	// screenshot window (select with mouse) after 5 seconds
+	scr2ppm -a -d 3 			// screenshot custom area after 3 seconds
     
 ```
 
