@@ -11,6 +11,7 @@ $ flatpak install io.github.igorlogius.scr2ppm
 ```
 
 # Run via flatpak from CLI 
+
 ```
 $ flatpak run io.github.igorlogius.scr2ppm [ARGS]
 ```
