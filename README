@@ -4,14 +4,20 @@
 
 The tiniest X11 screen capture aka. screenshot utility
 
-# Install and run via flatpak 
+# Install from flathub 
 
 ```
-flatpak install io.github.igorlogius.scr2ppm
-flatpak run io.github.igorlogius.scr2ppm
+$ flatpak install io.github.igorlogius.scr2ppm
 ```
 
-# Arguments (-s,-a or -w) required, (-d) optional
+# Run via flatpak from CLI 
+```
+$ flatpak run io.github.igorlogius.scr2ppm [ARGS]
+```
+
+# ARGumentS 
+
+one of `-s`,`-a` or `-w` is required and `-d` can be optionally added to add a delay before the capture
 
 ```
   -s := capture the entire screen aka. desktop  
@@ -23,7 +29,7 @@ flatpak run io.github.igorlogius.scr2ppm
 # Output 
 
 The output will be send to STDOUT (STanDard OUTput) and can be writen to a Portable PixMap (PPM) file 
-or directly piped into another programm like (`convert`) process it further
+or directly piped into another programm like to process it further
 
 # Examples 
 
@@ -36,7 +42,8 @@ or directly piped into another programm like (`convert`) process it further
 	scr2ppm -a -d 3  			// screenshot custom area after 3 seconds
     
 ```
-# Manual Build 
+
+# Manual build script without flatpak
 
 CWD=$PWD
 
@@ -75,4 +82,4 @@ fi
 
 rm -rf $EXTRDIR/ $ZIPFILE
 
-# 
+# EOF 
