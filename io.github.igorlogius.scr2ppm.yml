@@ -2,7 +2,7 @@ app-id: io.github.igorlogius.scr2ppm
 runtime: org.freedesktop.Platform
 runtime-version: '23.08'
 sdk: org.freedesktop.Sdk
-command: scr2ppm-wrapper
+command: scr2ppm
 rename-icon: scr2ppm
 rename-desktop-file: scr2ppm.desktop
 rename-appdata-file: scr2ppm.metainfo.xml
