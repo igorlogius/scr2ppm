@@ -202,9 +202,9 @@ selectArea(
     XEvent ev;
 
     /**/
-    Cursor cursor, cursor2;
+    Cursor cursor /*, cursor2*/;
     cursor = XCreateFontCursor(disp, XC_left_ptr);
-    cursor2 = XCreateFontCursor(disp, XC_lr_angle);
+    //cursor2 = XCreateFontCursor(disp, XC_lr_angle);
 	/**/
 
     /**/
@@ -237,14 +237,14 @@ selectArea(
                 case MotionNotify:
                     /* this case is purely for drawing rect on screen */
                     if (btn_pressed) {
-                        if (rect_w) {
+                        //if (rect_w) {
                             /* re-draw the last rect to clear it */
                             XDrawRectangle(disp, *root, gc, rect_x, rect_y, rect_w, rect_h);
-                        } else {
+                        //} else {
                             /* Change the cursor to show we're selecting a region */
-                            XChangeActivePointerGrab(disp, ButtonMotionMask | ButtonReleaseMask, cursor2, CurrentTime);
+                        //    XChangeActivePointerGrab(disp, ButtonMotionMask | ButtonReleaseMask, cursor2, CurrentTime);
                             /**/
-                        }
+                        //}
 
                         rect_x = rx;
                         rect_y = ry;
@@ -293,7 +293,7 @@ selectArea(
                             cursor, CurrentTime);
 	/**/
     XFreeCursor(disp, cursor);
-    XFreeCursor(disp, cursor2);
+    //XFreeCursor(disp, cursor2);
 	XUngrabPointer(disp, CurrentTime);
     XFreeGC(disp, gc);
     XSync(disp,True);
