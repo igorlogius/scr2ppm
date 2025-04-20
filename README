@@ -29,7 +29,7 @@ one of `-s`,`-a` or `-w` is required and `-d` can be optionally added to add a d
 
 # Output 
 
-The output will be send to STDOUT (STanDard OUTput) and can be writen to a Portable PixMap (PPM) file 
+The output will be send to STDOUT (STanDard OUTput) and can be written to a Portable PixMap (PPM) file 
 or directly piped into another programm like (image/gaphickmagics `convert`) to process it further
 
 # Examples 
