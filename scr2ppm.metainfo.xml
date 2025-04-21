@@ -7,7 +7,7 @@
     <content_rating type="oars-1.1" />
     <developer_name>igorlogius</developer_name>
     <categories>
-        <category>Utilities</category>
+        <category>Utility</category>
     </categories>
     <name>Screen to Portable PixMap</name>
     <summary>The tiniest X11 screen capture aka. screenshot utility</summary>
