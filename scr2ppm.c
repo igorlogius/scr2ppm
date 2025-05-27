@@ -1,5 +1,5 @@
 /**
- * desciption: make screenshot from parts of your desktop as portable pixmap data
+ * desciption: make screenshot from a part of the desktop, outputs a portable pixmap byte stream
  * repo: https://github.com/igorlogius/scr2ppm
  * author: https://github.com/igorlogius
  * refs: https://en.wikipedia.org/wiki/Netpbm#PPM_example
@@ -205,7 +205,7 @@ selectArea(
     Cursor cursor /*, cursor2*/;
     cursor = XCreateFontCursor(disp, XC_left_ptr);
     //cursor2 = XCreateFontCursor(disp, XC_lr_angle);
-	/**/
+    /**/
 
     /**/
     XGCValues gcval;
@@ -287,14 +287,14 @@ selectArea(
         XFlush(disp);
     }
 
-	/* reset cursor style */
-     	XChangeActivePointerGrab(disp,
+    /* reset cursor style */
+    XChangeActivePointerGrab(disp,
 		             ButtonMotionMask | ButtonReleaseMask,
                             cursor, CurrentTime);
-	/**/
+    /**/
     XFreeCursor(disp, cursor);
     //XFreeCursor(disp, cursor2);
-	XUngrabPointer(disp, CurrentTime);
+    XUngrabPointer(disp, CurrentTime);
     XFreeGC(disp, gc);
     XSync(disp,True);
 
@@ -328,7 +328,7 @@ main(
     int delay = -1; //
     int mode = -1;  //
     int opt = -1;   //
-    opterr = 0; // supress invalid option -- 'xyz' output
+    opterr = 0;     // supress invalid option -- 'xyz' output
     int x = -1;
     int y = -1;
     unsigned long pixel = -1;
@@ -369,12 +369,6 @@ main(
         XCloseDisplay(disp);
         return -1;
     }
-
-    /**
-     * TODO:
-     * - add a countdown
-     * - add / keep the the border
-     * */
 
     // get Image Data
     //printRect(&rect);
