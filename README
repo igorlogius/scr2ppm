@@ -35,12 +35,12 @@ or directly piped into another programm like (image/gaphickmagics `convert`) to 
 # Examples 
 
 ```
-  scr2ppm -s > shot.ppm		  // screenshot entire screen immediately 
+  scr2ppm -s > shot.ppm		      // screenshot entire screen immediately 
   scr2ppm -s | convert - shot.png // make screenshot and save it via convert as a png
-  scr2ppm -s -d 10 		  // screenshot entire screen after 10 seconds
-  scr2ppm -a			  // screenshot selected area immediately
-  scr2ppm -w -d 5		  // screenshot window (select with mouse) after 5 seconds
-  scr2ppm -a -d 3		  // screenshot custom area after 3 seconds    
+  scr2ppm -s -d 10 		          // screenshot entire screen after 10 seconds
+  scr2ppm -a			          // screenshot selected area immediately
+  scr2ppm -w -d 5		          // screenshot window (select with mouse) after 5 seconds
+  scr2ppm -a -d 3		          // screenshot custom area after 3 seconds    
 ```
 
 # Manual build script
