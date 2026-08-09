@@ -1,6 +1,6 @@
 app-id: io.github.igorlogius.scr2ppm
 runtime: org.freedesktop.Platform
-runtime-version: '26.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 command: scr2ppm
 rename-icon: scr2ppm
