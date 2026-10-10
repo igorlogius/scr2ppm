@@ -2,3 +2,6 @@
 /.flatpak-builder/
 /flatpak-build-dir/
 /*.tar.gz
+/CMakeCache.txt
+/Makefile
+/cmake_install.cmake

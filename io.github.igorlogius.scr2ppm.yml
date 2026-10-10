@@ -9,8 +9,46 @@ rename-appdata-file: scr2ppm.metainfo.xml
 finish-args:
   - --socket=x11
   - --share=ipc
+  - --device=dri
   - --filesystem=~/Screenshots:create
+
 modules:
+  - name: glew
+    buildsystem: cmake-ninja
+    subdir: build/cmake
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_UTILS=OFF
+      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    sources:
+      - type: archive
+        url: https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz
+        sha256: d4fc82893cfb00109578d0a1a2337fb8ca335b3ceccf97b97e5cc7f08e4353e1
+
+  - name: glm
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DGLM_BUILD_TESTS=OFF
+      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    sources:
+      - type: git
+        url: https://github.com/g-truc/glm.git
+        tag: 1.0.2
+
+  - name: slop
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_CXX_FLAGS=-DGLEW_NO_GLU
+      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    sources:
+      - type: git
+        url: https://github.com/naelstrof/slop.git
+        commit: b0228305332da465d536cae533895934ab0ac58b
+    cleanup:
+      - /share/doc
+      - /share/man
+
   - name: scr2ppm
     buildsystem: simple
     build-commands:
@@ -21,6 +59,5 @@ modules:
       - install -D scr2ppm.metainfo.xml /app/share/metainfo/scr2ppm.metainfo.xml
       - install -D scr2ppm.png /app/share/icons/hicolor/128x128/apps/scr2ppm.png
     sources:
-      - type: git
-        url: https://github.com/igorlogius/scr2ppm.git
-        branch: main
+      - type: dir
+        path: .

@@ -8,6 +8,7 @@
 #include<stdio.h>  /* printf */
 #include<stdlib.h> /* atoi */
 #include<unistd.h> /* sleep */
+#include<string.h> /* popen helpers */
 
 /* X11 includes */
 #include<X11/Xlib.h>
@@ -319,6 +320,52 @@ selectArea(
     return 0;
 }
 
+/* use slop for the interactive area selection; returns 0 on success */
+int
+selectAreaSlop(
+        Display *disp,
+        Window *root,
+        Rect *rect
+) {
+    int x, y, w, h;
+    XWindowAttributes ra;
+
+    /* -t 0 disables window-snapping, so click+drag is always an area.
+       slop's own stderr is left visible so GL/X errors show up. */
+    FILE *fp = popen("slop -t 0 -f '%x %y %w %h'", "r");
+    if (fp == NULL) {
+        fprintf(stderr, "[ERRO] failed to start slop\n");
+        return -1;
+    }
+
+    int n = fscanf(fp, "%d %d %d %d", &x, &y, &w, &h);
+    int status = pclose(fp);
+
+    if (n != 4 || status != 0) {
+        fprintf(stderr, "[ERRO] selection cancelled or slop failed\n");
+        return -1;
+    }
+
+    /* clamp to the root window */
+    if (x < 0) { w += x; x = 0; }
+    if (y < 0) { h += y; y = 0; }
+    if (XGetWindowAttributes(disp, *root, &ra) != 0) {
+        if (x + w > ra.width)  w = ra.width  - x;
+        if (y + h > ra.height) h = ra.height - y;
+    }
+    if (w < 1 || h < 1) {
+        fprintf(stderr, "[ERRO] empty selection\n");
+        return -1;
+    }
+
+    rect->x = x; rect->y = y; rect->w = w; rect->h = h;
+
+    /* give the compositor a moment to remove slop's overlay */
+    XSync(disp, False);
+    usleep(150000);
+    return 0;
+}
+
 int
 main(
     int argc,
@@ -358,7 +405,7 @@ main(
     {
         case 0: ret = getWindowGeometry(disp, NULL, &root, &rect); break;
         case 1: ret = selectWindow(disp, &root, &rect);       break;
-        case 2: ret = selectArea(disp, &root, &rect);         break;
+        case 2: ret = selectAreaSlop(disp, &root, &rect);     break;
         default: usage(argv[0],"");break;
     }
 
@@ -372,6 +419,7 @@ main(
 
     // get Image Data
     //printRect(&rect);
+    if(delay > 0) {sleep(delay);}
     image = XGetImage(disp, root, rect.x, rect.y, rect.w, rect.h, AllPlanes, ZPixmap);
     XDestroyWindow(disp, root);
 
@@ -379,8 +427,6 @@ main(
         fprintf(stderr,"ERROR: failed to get image data");
         return -1;
     }
-
-    if(delay > 0) {sleep(delay);}
 
     XBell(disp,0);
     XCloseDisplay(disp);
