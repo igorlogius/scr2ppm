@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# started without arguments (e.g. from the application menu): show the options window
+if [ $# -eq 0 ]; then
+    exec scr2ppm-gui
+fi
+
 # resolve the user's Pictures folder (flatpak exposes the host's user-dirs.dirs)
 USER_DIRS="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
 if [ -f "$USER_DIRS" ]; then
@@ -9,5 +14,16 @@ if [ -f "$USER_DIRS" ]; then
 fi
 DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
 
+# -o is handled here (open the screenshot afterwards), everything else goes to scr2ppm
+OPEN=0
+ARGS=()
+for arg in "$@"; do
+    if [ "$arg" = "-o" ]; then OPEN=1; else ARGS+=("$arg"); fi
+done
+
 FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).ppm"
-scr2ppm "$@" > "$FILE" || { rm -f "$FILE"; exit 1; }
+scr2ppm ${ARGS[@]+"${ARGS[@]}"} > "$FILE" || { rm -f "$FILE"; exit 1; }
+
+if [ "$OPEN" -eq 1 ]; then
+    xdg-open "$FILE" >/dev/null 2>&1 || echo "scr2ppm: could not open $FILE" >&2
+fi

@@ -10,3 +10,5 @@ include_directories(${X11_INCLUDE_DIR})
 link_directories(${X11_LIBRARIES})
 target_link_libraries(scr2ppm ${X11_LIBRARIES})
 
+add_executable(scr2ppm-gui scr2ppm-gui.c)
+target_link_libraries(scr2ppm-gui ${X11_LIBRARIES})

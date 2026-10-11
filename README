@@ -10,11 +10,22 @@ The tiniest X11 screen capture aka. screenshot utility
 $ flatpak install io.github.igorlogius.scr2ppm
 ```
 
-# Run via flatpak from CLI 
+# Run via CLI 
 
 ```
 $ flatpak run io.github.igorlogius.scr2ppm [ARGS]
 ```
+
+# Options window
+
+Starting the app without arguments (e.g. from the application menu) opens a small window
+where you can choose what to capture (entire screen, a window or an area) and an optional
+delay. Pressing `Capture` (or `Enter`) closes the window and starts the capture.
+`Capture & Open` does the same and then opens the saved screenshot with your default image viewer.
+Keyboard: `s`/`w`/`a` or `1`/`2`/`3` select the mode, `Up`/`Down` change the delay, `Enter` captures,
+`Shift+Enter` captures and opens, `Esc` cancels.
+
+The wrapper script also accepts `-o` on its own, e.g. `scr2ppm-wrapper -a -d 3 -o`.
 
 # ARGumentS 
 
@@ -42,44 +53,3 @@ or directly piped into another programm like (image/gaphickmagics `convert`) to 
   scr2ppm -w -d 5		          // screenshot window (select with mouse) after 5 seconds
   scr2ppm -a -d 3		          // screenshot custom area after 3 seconds    
 ```
-
-# Manual build script
-
-CWD=$PWD
-
-MISSING_REQ=0
-for req in mktemp wget unzip;do
-	type $req >/dev/null 2>&1 || { echo >&2 "Missing dependency: $req"; MISSING_REQ=1; }
-done
-
-[ $MISSING_REQ -ne 0 ] && { echo "Aborting because of missing dependency"; exit 1; }
-
-ZIPFILE=$(mktemp)
-EXTRDIR=$(mktemp -d)
-
-wget -q --show-progress https://github.com/igorlogius/src2ppm/archive/main.zip -O $ZIPFILE
-
-unzip -j $ZIPFILE "src2ppm-main/scr2ppm.c" -d $EXTRDIR 
-unzip -j $ZIPFILE "src2ppm-main/CMakeLists.txt" -d $EXTRDIR 
-
-cd $EXTRDIR
-
-type cmake >/dev/null 2>&1;CM_RET=$?
-type cc >/dev/null 2>&1;CC_RET=$?
-
-if [ $CM_RET -eq 0 ];then
-    cmake . && make
-elif [ $CC_RET -eq 0];then
-    cc ./scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
-fi
-
-if [ -x ./scr2ppm ];then
-	mv scr2ppm $CWD/; 
-	echo "build done"
-else
-	echo "build failed";
-fi
-
-rm -rf $EXTRDIR/ $ZIPFILE
-
-# EOF 

@@ -9,41 +9,49 @@
     <categories>
         <category>Utility</category>
     </categories>
-    <name>Screen to Portable PixMap</name>
-    <summary>The tiniest X11 screen capture aka. screenshot utility</summary>
+    <keywords>
+        <keyword>screenshot</keyword>
+        <keyword>screen capture</keyword>
+        <keyword>screengrab</keyword>
+        <keyword>ppm</keyword>
+        <keyword>x11</keyword>
+    </keywords>
+    <name>Screen 2 PPM</name>
+    <summary>Take quick screenshots</summary>
     <description>
-        <p>The tiniest X11 screen capture aka. screenshot utility</p>
+        <p>Screen 2 PPM takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>
+        <p>Need time to set things up first? Add a delay and a colored border around the capture area drains from red to blue, so you can see how much time is left. Screenshots are saved as PPM images in your Pictures folder.</p>
+        <p>Works on X11 desktops.</p>
     </description>
     <launchable type="desktop-id">scr2ppm.desktop</launchable>
 
+    <branding>
+        <color type="primary" scheme_preference="light">#99c1f1</color>
+        <color type="primary" scheme_preference="dark">#26456e</color>
+    </branding>
+
     <screenshots>
         <screenshot type="default">
-            <caption>Logo of scr2ppm</caption>
-            <image>https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm.png</image>
+            <caption xml:lang="en">Logo of scr2ppm</caption>
+            <image xml:lang="en">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm.png</image>
         </screenshot>
     </screenshots>
 
     <url type="homepage">https://github.com/igorlogius/scr2ppm</url>
-    <url type="bugtracker">https://github.com/igorlogius/scr2ppm/issues/new/choose    </url>
+    <url type="bugtracker">https://github.com/igorlogius/scr2ppm/issues/new/choose</url>
 
     <releases>
         <release version="2.0.0" date="2026-10-10">
             <description>
-                <ul>
-                    <li>better rectangles</li>
-                </ul>
+                <p>Area selection now uses slop, which gives a clearer and more reliable selection rectangle</p>
             </description>
         </release>
         <release version="1.0.3" date="2021-11-04">
             <description>
-                <ul>
-                    <li>inital flatpak release</li>
-                </ul>
+                <p>Initial Flatpak release</p>
             </description>
         </release>
     </releases>
 
-    <icon type="remote" height="128" width="128">https://github.com/igorlogius/scr2ppm/blob/main/scr2ppm.png</icon>
-
-    <update_contact>https://github.com/igorlogius</update_contact>    
+    <update_contact>https://github.com/igorlogius</update_contact>
 </component>

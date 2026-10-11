@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=scr2ppm
-Comment=The tiniest X11 screen capture aka. screenshot utility
+Name=Screen 2 PPM
+Comment=Take quick screenshots
 TryExec=scr2ppm-wrapper
 Exec=scr2ppm-wrapper
 Icon=scr2ppm

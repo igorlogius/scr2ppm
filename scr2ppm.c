@@ -386,6 +386,23 @@ allocColor(Display *disp, const char *name, unsigned long fallback){
     return fallback;
 }
 
+/* Outer box of the border around rect. Normally just OUTSIDE rect; if rect
+ * touches a screen edge (full screen, maximized window, ...) there is no room
+ * outside, so the border is placed INSIDE rect instead. */
+static void
+borderBox(Display *disp, Rect *rect, int *Ox, int *Oy, int *Ow, int *Oh){
+    const int t = BORDER_PX;
+    int scr = DefaultScreen(disp);
+    int sw = DisplayWidth(disp, scr);
+    int sh = DisplayHeight(disp, scr);
+    int inside = (rect->x < t) || (rect->y < t) ||
+                 (rect->x + rect->w > sw - t) || (rect->y + rect->h > sh - t);
+    *Ox = inside ? rect->x : rect->x - t;
+    *Oy = inside ? rect->y : rect->y - t;
+    *Ow = inside ? rect->w : rect->w + 2*t;
+    *Oh = inside ? rect->h : rect->h + 2*t;
+}
+
 /* Shows a border around rect for `seconds`. It starts completely red and the
  * red drains clockwise from the top-left, revealing blue underneath, so the
  * border stays fully visible and ends up completely blue. It is removed again
@@ -407,16 +424,8 @@ delayWithBorder(
     unsigned long red  = allocColor(disp, "#ff3b30", WhitePixel(disp, scr));
     unsigned long blue = allocColor(disp, "#0a84ff", BlackPixel(disp, scr));
 
-    int sw = DisplayWidth(disp, scr);
-    int sh = DisplayHeight(disp, scr);
-    int inside = (rect->x < t) || (rect->y < t) ||
-                 (rect->x + rect->w > sw - t) || (rect->y + rect->h > sh - t);
-
-    /* outer box of the border */
-    int Ox = inside ? rect->x : rect->x - t;
-    int Oy = inside ? rect->y : rect->y - t;
-    int Ow = inside ? rect->w : rect->w + 2*t;
-    int Oh = inside ? rect->h : rect->h + 2*t;
+    int Ox, Oy, Ow, Oh;   /* outer box of the border */
+    borderBox(disp, rect, &Ox, &Oy, &Ow, &Oh);
 
     /* four sides on a clockwise path: 0 top, 1 right, 2 bottom, 3 left */
     int side = Oh - 2*t; if (side < 0) side = 0;
@@ -484,6 +493,48 @@ delayWithBorder(
     usleep(150000);      /* let the compositor drop the bars before capturing */
 }
 
+#define FLASH_MS 250
+
+/* Brief green flash of the border around the captured area, as feedback that
+ * the capture happened. Called AFTER the image was grabbed, so it never ends
+ * up in the screenshot. */
+void
+flashBorder(
+        Display *disp,
+        Window root,
+        Rect *rect
+) {
+    const int t = BORDER_PX;
+    unsigned long green = allocColor(disp, "#34c759", WhitePixel(disp, DefaultScreen(disp)));
+
+    int Ox, Oy, Ow, Oh;
+    borderBox(disp, rect, &Ox, &Oy, &Ow, &Oh);
+    int side = Oh - 2*t; if (side < 0) side = 0;
+
+    int bx[4] = { Ox,  Ox + Ow - t,  Ox,           Ox };
+    int by[4] = { Oy,  Oy + t,       Oy + Oh - t,  Oy + t };
+    int bw[4] = { Ow,  t,            Ow,           t };
+    int bh[4] = { t,   side,         t,            side };
+
+    XSetWindowAttributes swa;
+    swa.override_redirect = True;
+    swa.background_pixel = green;
+
+    Window bar[4];
+    for (int i = 0; i < 4; i++) {
+        bar[i] = XCreateWindow(disp, root, bx[i], by[i],
+                               bw[i] > 0 ? bw[i] : 1, bh[i] > 0 ? bh[i] : 1, 0,
+                               CopyFromParent, InputOutput, CopyFromParent,
+                               CWOverrideRedirect | CWBackPixel, &swa);
+        if (bw[i] > 0 && bh[i] > 0) { XMapWindow(disp, bar[i]); }
+    }
+    XFlush(disp);
+    usleep(FLASH_MS * 1000);
+
+    for (int i = 0; i < 4; i++) { XDestroyWindow(disp, bar[i]); }
+    XSync(disp, False);
+}
+
 int
 main(
     int argc,
@@ -548,6 +599,7 @@ main(
         return -1;
     }
 
+    flashBorder(disp, root, &rect);   /* visual "it happened" cue */
     XBell(disp,0);
     XCloseDisplay(disp);
 
