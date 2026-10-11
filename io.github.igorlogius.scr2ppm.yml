@@ -10,7 +10,7 @@ finish-args:
   - --socket=x11
   - --share=ipc
   - --device=dri
-  - --filesystem=~/Screenshots:create
+  - --filesystem=xdg-pictures:create
 
 modules:
   - name: glew

@@ -1,6 +1,13 @@
 #!/bin/bash
 set -euo pipefail
-DIR="$HOME/Screenshots"
-mkdir -p "$DIR"
+
+# resolve the user's Pictures folder (flatpak exposes the host's user-dirs.dirs)
+USER_DIRS="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+if [ -f "$USER_DIRS" ]; then
+    # shellcheck disable=SC1090
+    . "$USER_DIRS"
+fi
+DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+
 FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).ppm"
 scr2ppm "$@" > "$FILE" || { rm -f "$FILE"; exit 1; }

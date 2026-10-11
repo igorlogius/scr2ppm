@@ -9,6 +9,7 @@
 #include<stdlib.h> /* atoi */
 #include<unistd.h> /* sleep */
 #include<string.h> /* popen helpers */
+#include<time.h>   /* clock_gettime */
 
 /* X11 includes */
 #include<X11/Xlib.h>
@@ -366,6 +367,123 @@ selectAreaSlop(
     return 0;
 }
 
+#define BORDER_PX 4
+
+static double
+nowSeconds(void){
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + ts.tv_nsec / 1e9;
+}
+
+static unsigned long
+allocColor(Display *disp, const char *name, unsigned long fallback){
+    int scr = DefaultScreen(disp);
+    XColor color, exact;
+    if (XAllocNamedColor(disp, DefaultColormap(disp, scr), name, &color, &exact)) {
+        return color.pixel;
+    }
+    return fallback;
+}
+
+/* Shows a border around rect for `seconds`. It starts completely red and the
+ * red drains clockwise from the top-left, revealing blue underneath, so the
+ * border stays fully visible and ends up completely blue. It is removed again
+ * afterwards.
+ *
+ * Normally the border is drawn just OUTSIDE rect. If rect touches a screen edge
+ * (full screen, maximized window, ...) there is no room outside, so the border
+ * is drawn INSIDE rect instead. Either way it is gone (and the compositor has
+ * had time to notice) before the capture, so it never ends up in the image. */
+void
+delayWithBorder(
+        Display *disp,
+        Window root,
+        Rect *rect,
+        int seconds
+) {
+    const int t = BORDER_PX;
+    int scr = DefaultScreen(disp);
+    unsigned long red  = allocColor(disp, "#ff3b30", WhitePixel(disp, scr));
+    unsigned long blue = allocColor(disp, "#0a84ff", BlackPixel(disp, scr));
+
+    int sw = DisplayWidth(disp, scr);
+    int sh = DisplayHeight(disp, scr);
+    int inside = (rect->x < t) || (rect->y < t) ||
+                 (rect->x + rect->w > sw - t) || (rect->y + rect->h > sh - t);
+
+    /* outer box of the border */
+    int Ox = inside ? rect->x : rect->x - t;
+    int Oy = inside ? rect->y : rect->y - t;
+    int Ow = inside ? rect->w : rect->w + 2*t;
+    int Oh = inside ? rect->h : rect->h + 2*t;
+
+    /* four sides on a clockwise path: 0 top, 1 right, 2 bottom, 3 left */
+    int side = Oh - 2*t; if (side < 0) side = 0;
+    int len[4] = { Ow, side, Ow, side };
+    int start[4];
+    int total = 0;
+    for (int i = 0; i < 4; i++) { start[i] = total; total += len[i]; }
+
+    /* full-length geometry of each side */
+    int bx[4] = { Ox,           Ox + Ow - t,  Ox,           Ox };
+    int by[4] = { Oy,           Oy + t,       Oy + Oh - t,  Oy + t };
+    int bw[4] = { Ow,           t,            Ow,           t };
+    int bh[4] = { t,            side,         t,            side };
+
+    Window under[4], over[4];
+    XSetWindowAttributes swa;
+    swa.override_redirect = True;
+
+    /* blue bars: static, full length, underneath */
+    swa.background_pixel = blue;
+    for (int i = 0; i < 4; i++) {
+        under[i] = XCreateWindow(disp, root, bx[i], by[i],
+                                 bw[i] > 0 ? bw[i] : 1, bh[i] > 0 ? bh[i] : 1, 0,
+                                 CopyFromParent, InputOutput, CopyFromParent,
+                                 CWOverrideRedirect | CWBackPixel, &swa);
+        if (len[i] > 0) { XMapWindow(disp, under[i]); }
+    }
+    /* red bars: created and mapped after the blue ones, so they stack on top */
+    swa.background_pixel = red;
+    for (int i = 0; i < 4; i++) {
+        over[i] = XCreateWindow(disp, root, bx[i], by[i],
+                                bw[i] > 0 ? bw[i] : 1, bh[i] > 0 ? bh[i] : 1, 0,
+                                CopyFromParent, InputOutput, CopyFromParent,
+                                CWOverrideRedirect | CWBackPixel, &swa);
+        if (len[i] > 0) { XMapWindow(disp, over[i]); }
+    }
+    XFlush(disp);
+
+    double t0 = nowSeconds();
+    double elapsed;
+    while ((elapsed = nowSeconds() - t0) < seconds) {
+        int pos = (int)(elapsed / seconds * total);   /* red remains on [pos, total) */
+
+        for (int i = 0; i < 4; i++) {
+            int a = pos > start[i] ? pos : start[i];
+            int b = start[i] + len[i];
+            if (b - a < 1) { XUnmapWindow(disp, over[i]); continue; }
+            int from = a - start[i];
+            int to   = b - start[i];
+            int n    = to - from;
+            switch (i) {
+                case 0: XMoveResizeWindow(disp, over[i], Ox + from, Oy, n, t); break;
+                case 1: XMoveResizeWindow(disp, over[i], Ox + Ow - t, Oy + t + from, t, n); break;
+                case 2: XMoveResizeWindow(disp, over[i], Ox + (len[i] - to), Oy + Oh - t, n, t); break;
+                case 3: XMoveResizeWindow(disp, over[i], Ox, Oy + t + (len[i] - to), t, n); break;
+            }
+            XMapWindow(disp, over[i]);
+        }
+        XFlush(disp);
+        usleep(30000);   /* ~30 fps */
+    }
+
+    for (int i = 0; i < 4; i++) { XDestroyWindow(disp, over[i]); XDestroyWindow(disp, under[i]); }
+    XSync(disp, False);
+    usleep(150000);      /* let the compositor drop the bars before capturing */
+}
+
 int
 main(
     int argc,
@@ -419,7 +537,9 @@ main(
 
     // get Image Data
     //printRect(&rect);
-    if(delay > 0) {sleep(delay);}
+    if(delay > 0) {
+        delayWithBorder(disp, root, &rect, delay);   /* red border drains to blue */
+    }
     image = XGetImage(disp, root, rect.x, rect.y, rect.w, rect.h, AllPlanes, ZPixmap);
     XDestroyWindow(disp, root);
 
