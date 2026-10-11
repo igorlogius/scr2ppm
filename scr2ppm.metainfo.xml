@@ -32,8 +32,8 @@
 
     <screenshots>
         <screenshot type="default">
-            <caption xml:lang="en">Logo of scr2ppm</caption>
-            <image xml:lang="en">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm.png</image>
+            <caption>Choose what to capture and an optional delay</caption>
+            <image type="source" width="330" height="284">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-gui.png</image>
         </screenshot>
     </screenshots>
 
