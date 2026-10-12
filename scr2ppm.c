@@ -49,8 +49,12 @@ usage(
 	fprintf(stderr,"  -s := capture the entire screen / desktop\n");
 	fprintf(stderr,"  -w := select and capture a window\n");
 	fprintf(stderr,"  -a := select and capture a custom area\n");
-	fprintf(stderr,"  -d := add a delay in seconds");
+	fprintf(stderr,"        (while dragging: hold Space to move the selection, arrow keys nudge the\n");
+	fprintf(stderr,"         start corner, right click cancels)\n");
+	fprintf(stderr,"  -d := add a delay in seconds\n");
 	fprintf(stderr,"\n");
+	fprintf(stderr,"The screenshot is written to stdout as a PPM image. For PNG/JPG output, saving into\n");
+	fprintf(stderr,"the Pictures folder and an options window, use scr2ppm-wrapper (see scr2ppm-wrapper -h).\n");
 	fprintf(stderr,"\n");
 	fprintf(stderr,"Examples: \n");
 	fprintf(stderr,"	%s -s        # screenshot entire screen / desktop immediately\n",pname);

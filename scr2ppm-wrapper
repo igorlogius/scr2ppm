@@ -1,29 +1,162 @@
 #!/bin/bash
 set -euo pipefail
 
+usage() {
+    cat <<'EOF'
+scr2ppm-wrapper - take a screenshot and save it in your Pictures folder
+
+usage: scr2ppm-wrapper                                (no options: open the options window)
+       scr2ppm-wrapper -[s|w|a] [-d SECONDS] [-f FORMAT] [-D FOLDER] [-o] [-r]
+       scr2ppm-wrapper --open-dir [-D FOLDER]
+       scr2ppm-wrapper --choose-dir
+
+capture:
+  -s            capture the entire screen
+  -w            select and capture a window (click on it)
+  -a            select and capture an area (drag with the mouse; hold Space
+                while dragging to move the selection, arrow keys nudge the
+                start corner, right click cancels)
+  -d SECONDS    wait this many seconds before capturing, a border around the
+                capture area shows the remaining time
+
+output:
+  -f FORMAT     image format: ppm (default), png or jpg
+  -D FOLDER     save the screenshot in this folder instead of the Pictures folder
+                (falls back to the Pictures folder if it can't be written to)
+  -o            open the screenshot afterwards (xdg-open)
+  -r            show the options window again after the capture
+
+folders:
+  --open-dir    open the screenshot folder in the file manager and exit
+  --choose-dir  show a folder chooser and print the selected folder (exit code 1
+                if cancelled)
+
+  -h, --help    show this help
+
+The options window remembers the capture mode, format, delay, folder and
+re-open setting in $XDG_CONFIG_HOME/scr2ppm/gui.conf. These saved settings only apply
+to the options window, the command line always uses the defaults above.
+
+examples:
+  scr2ppm-wrapper -s                  # whole screen as PPM, right away
+  scr2ppm-wrapper -a -f png           # select an area, save as PNG
+  scr2ppm-wrapper -w -d 5 -f jpg -o   # window after 5 s as JPG, then open it
+  scr2ppm-wrapper -s -D ~/Shots       # whole screen into ~/Shots
+EOF
+}
+
 # started without arguments (e.g. from the application menu): show the options window
 if [ $# -eq 0 ]; then
     exec scr2ppm-gui
 fi
 
-# resolve the user's Pictures folder (flatpak exposes the host's user-dirs.dirs)
-USER_DIRS="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
-if [ -f "$USER_DIRS" ]; then
-    # shellcheck disable=SC1090
-    . "$USER_DIRS"
-fi
-DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+# the user's Pictures folder (flatpak exposes the host's user-dirs.dirs)
+default_dir() {
+    local user_dirs="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+    if [ -f "$user_dirs" ]; then
+        # shellcheck disable=SC1090
+        . "$user_dirs"
+    fi
+    printf '%s\n' "${XDG_PICTURES_DIR:-$HOME/Pictures}"
+}
 
-# -o is handled here (open the screenshot afterwards), everything else goes to scr2ppm
+# the folder to save in: -D if it is usable, otherwise the Pictures folder
+resolve_dir() {
+    local dir="${SAVE_DIR:-}"
+    if [ -n "$dir" ]; then
+        if [ -d "$dir" ] && [ -w "$dir" ]; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        echo "scr2ppm: '$dir' is not a writable folder, using the Pictures folder instead" >&2
+    fi
+    dir="$(default_dir)"
+    mkdir -p "$dir" 2>/dev/null || true
+    printf '%s\n' "$dir"
+}
+
+# folder chooser: the desktop portal (works in flatpak), then zenity or kdialog.
+# prints the folder, returns 1 if the user cancelled or nothing is available
+choose_dir() {
+    local out rc=0
+    if command -v scr2ppm-choosedir >/dev/null 2>&1; then
+        out="$(scr2ppm-choosedir "Choose where to save screenshots")" && rc=0 || rc=$?
+        if [ "$rc" -eq 0 ]; then printf '%s\n' "$out"; return 0; fi
+        if [ "$rc" -eq 1 ]; then return 1; fi
+    fi
+    if command -v zenity >/dev/null 2>&1; then
+        out="$(zenity --file-selection --directory --title="Choose where to save screenshots")" || return 1
+        printf '%s\n' "$out"
+        return 0
+    fi
+    if command -v kdialog >/dev/null 2>&1; then
+        out="$(kdialog --getexistingdirectory "$HOME")" || return 1
+        printf '%s\n' "$out"
+        return 0
+    fi
+    echo "scr2ppm: no folder chooser available" >&2
+    return 1
+}
+
+# -o (open afterwards), -r (show the options window again afterwards), -f <ppm|png|jpg> (output format),
+# -D <folder> (save folder) and --open-dir / --choose-dir are handled here, everything else goes to scr2ppm
 OPEN=0
+REOPEN=0
+FORMAT=ppm
+SAVE_DIR=
+ACTION=capture
 ARGS=()
-for arg in "$@"; do
-    if [ "$arg" = "-o" ]; then OPEN=1; else ARGS+=("$arg"); fi
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help) usage; exit 0 ;;
+        -o) OPEN=1 ;;
+        -r) REOPEN=1 ;;
+        -f) shift || true; FORMAT="${1:-ppm}" ;;
+        -D) shift || true; SAVE_DIR="${1:-}" ;;
+        --open-dir) ACTION=open ;;
+        --choose-dir) ACTION=choose ;;
+        *)  ARGS+=("$1") ;;
+    esac
+    shift || true
 done
 
-FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).ppm"
-scr2ppm ${ARGS[@]+"${ARGS[@]}"} > "$FILE" || { rm -f "$FILE"; exit 1; }
+case "$ACTION" in
+    open)
+        DIR="$(resolve_dir)"
+        xdg-open "$DIR" >/dev/null 2>&1 || { echo "scr2ppm: could not open $DIR" >&2; exit 1; }
+        exit 0
+        ;;
+    choose)
+        choose_dir
+        exit $?
+        ;;
+esac
 
-if [ "$OPEN" -eq 1 ]; then
+DIR="$(resolve_dir)"
+
+case "$FORMAT" in
+    ppm) EXT=ppm ;;
+    png) EXT=png ;;
+    jpg|jpeg) FORMAT=jpg; EXT=jpg ;;
+    *) echo "scr2ppm: unknown format '$FORMAT' (use ppm, png or jpg)" >&2; exit 1 ;;
+esac
+
+FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).$EXT"
+STATUS=0
+if [ "$FORMAT" = "ppm" ]; then
+    scr2ppm ${ARGS[@]+"${ARGS[@]}"} > "$FILE" || { rm -f "$FILE"; STATUS=1; }
+else
+    scr2ppm ${ARGS[@]+"${ARGS[@]}"} | ppm2img "$FORMAT" > "$FILE" || { rm -f "$FILE"; STATUS=1; }
+fi
+
+if [ "$STATUS" -eq 0 ] && [ "$OPEN" -eq 1 ]; then
     xdg-open "$FILE" >/dev/null 2>&1 || echo "scr2ppm: could not open $FILE" >&2
 fi
+
+# -r: bring the options window back (also after a failed or cancelled capture),
+# with the option still enabled, so it repeats until the window is closed normally
+if [ "$REOPEN" -eq 1 ]; then
+    exec scr2ppm-gui -r
+fi
+
+exit "$STATUS"

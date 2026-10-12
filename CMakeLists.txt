@@ -11,4 +11,14 @@ link_directories(${X11_LIBRARIES})
 target_link_libraries(scr2ppm ${X11_LIBRARIES})
 
 add_executable(scr2ppm-gui scr2ppm-gui.c)
-target_link_libraries(scr2ppm-gui ${X11_LIBRARIES})
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(XFT REQUIRED xft)
+target_include_directories(scr2ppm-gui PRIVATE ${XFT_INCLUDE_DIRS})
+target_link_libraries(scr2ppm-gui ${X11_LIBRARIES} ${XFT_LIBRARIES})
+
+add_executable(ppm2img ppm2img.c)
+
+pkg_check_modules(GIO REQUIRED gio-2.0)
+add_executable(scr2ppm-choosedir choosedir.c)
+target_include_directories(scr2ppm-choosedir PRIVATE ${GIO_INCLUDE_DIRS})
+target_link_libraries(scr2ppm-choosedir ${GIO_LIBRARIES})

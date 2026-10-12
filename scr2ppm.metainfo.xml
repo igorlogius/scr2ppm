@@ -20,7 +20,16 @@
     <summary>Take quick screenshots</summary>
     <description>
         <p>Screen 2 PPM takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>
-        <p>Need time to set things up first? Add a delay and a colored border around the capture area drains from red to blue, so you can see how much time is left. Screenshots are saved as PPM images in your Pictures folder.</p>
+        <p>Start the app to get a small options window where you can choose:</p>
+        <ul>
+            <li>what to capture: the entire screen, a window, or an area</li>
+            <li>an optional delay before the capture</li>
+            <li>the image format: PPM, PNG or JPG</li>
+            <li>whether the window should come back after each capture, which is handy for taking several screenshots in a row</li>
+        </ul>
+        <p>Your choices are remembered the next time you open the app. Screenshots are saved in your Pictures folder, and "Capture &amp; Open" shows the result right away.</p>
+        <p>While you drag out an area, hold the space bar to move the whole selection, and release it to continue resizing. The arrow keys nudge the starting corner, and a right click cancels.</p>
+        <p>Need time to set things up first? Add a delay and a colored border around the capture area drains from red to blue, so you can see how much time is left.</p>
         <p>Works on X11 desktops.</p>
     </description>
     <launchable type="desktop-id">scr2ppm.desktop</launchable>
@@ -33,7 +42,7 @@
     <screenshots>
         <screenshot type="default">
             <caption>Choose what to capture and an optional delay</caption>
-            <image type="source" width="330" height="284">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-gui.png</image>
+            <image type="source" width="128" height="128">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-gui.png</image>
         </screenshot>
     </screenshots>
 
