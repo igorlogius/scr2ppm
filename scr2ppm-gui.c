@@ -19,11 +19,15 @@
 
 #include<X11/Xlib.h>
 #include<X11/Xutil.h>
+#include<X11/Xatom.h>
+#include<X11/cursorfont.h>
 #include<X11/keysym.h>
 #include<X11/Xft/Xft.h>
 
-#define WIN_W      320
-#define WIN_H      340
+#include "scr2ppm-icon.h"
+
+#define WIN_W      360
+#define WIN_H      412
 #define MAX_DELAY  60
 
 enum { MODE_SCREEN, MODE_WINDOW, MODE_AREA, MODE_COUNT };
@@ -42,34 +46,39 @@ static const char *mode_label[MODE_COUNT] = {
     "An area (drag, hold Space to move)"
 };
 
-/* clickable regions, also used for drawing */
+/* clickable regions, also used for drawing (rows of the two "cards" are clickable as a whole) */
 static const Hit hits[] = {
-    {  10,  40, 300, 26, HIT_MODE0   },
-    {  10,  68, 300, 26, HIT_MODE1   },
-    {  10,  96, 300, 26, HIT_MODE2   },
-    { 120, 140,  28, 26, HIT_MINUS   },
-    { 196, 140,  28, 26, HIT_PLUS    },
-    {  90, 180,  60, 26, HIT_FMT0    },
-    { 156, 180,  60, 26, HIT_FMT1    },
-    { 222, 180,  60, 26, HIT_FMT2    },
-    {  80, 214,  60, 26, HIT_OPENDIR },
-    { 146, 214,  80, 26, HIT_CHGDIR  },
-    { 232, 214,  78, 26, HIT_DEFDIR  },
-    {  10, 268, 300, 22, HIT_REOPEN  },
-    {  10, 298,  70, 30, HIT_CANCEL       },
-    {  88, 298,  80, 30, HIT_CAPTURE      },
-    { 176, 298, 134, 30, HIT_CAPTURE_OPEN },
+    {  16,  34, 328, 34, HIT_MODE0   },
+    {  16,  68, 328, 34, HIT_MODE1   },
+    {  16, 102, 328, 34, HIT_MODE2   },
+    { 186, 176,  30, 28, HIT_MINUS   },
+    { 302, 176,  30, 28, HIT_PLUS    },
+    { 146, 216,  62, 28, HIT_FMT0    },
+    { 208, 216,  62, 28, HIT_FMT1    },
+    { 270, 216,  62, 28, HIT_FMT2    },
+    { 132, 256,  52, 28, HIT_OPENDIR },
+    { 190, 256,  72, 28, HIT_CHGDIR  },
+    { 268, 256,  64, 28, HIT_DEFDIR  },
+    {  16, 314, 328, 34, HIT_REOPEN  },
+    {  16, 366,  76, 32, HIT_CANCEL       },
+    { 116, 366, 130, 32, HIT_CAPTURE_OPEN },
+    { 254, 366,  90, 32, HIT_CAPTURE      },
 };
 #define N_HITS ((int)(sizeof(hits) / sizeof(hits[0])))
 
 static Display *disp;
 static Window win;
+static Pixmap buf;        /* everything is drawn here first, then copied to the window (no flicker) */
 static GC gc;
 static XftFont *font;     /* Xft: anti-aliased, fontconfig-configured text */
+static XftFont *font_small;
 static XftDraw *xdraw;
-static XftColor xc_fg, xc_white;
+static XftColor xc_fg, xc_white, xc_muted;
 
 static unsigned long col_bg, col_fg, col_border, col_accent, col_white;
+static unsigned long col_card, col_sep, col_track;
+static unsigned long col_btn, col_btn_hover, col_btn_press;
+static unsigned long col_accent_hover, col_accent_press;
 
 static int mode = MODE_AREA;
 static int delay = 0;
@@ -77,6 +86,8 @@ static int format = FMT_PPM;
 static char save_dir[1024];   /* empty = the default Pictures folder (passed on as -D) */
 static int reopen = 0;   /* re-open this window after a capture (passed on as -r) */
 static int pressed = HIT_NONE;
+static int hover = HIT_NONE;
+static Cursor cur_hand;
 
 static unsigned long
 allocColor(const char *name, unsigned long fallback){
@@ -144,8 +155,13 @@ hitAt(int x, int y){
 }
 
 static void
+drawTextF(XftFont *f, int x, int baseline, const char *s, const XftColor *color){
+    XftDrawStringUtf8(xdraw, color, f, x, baseline, (const FcChar8 *)s, (int)strlen(s));
+}
+
+static void
 drawText(int x, int baseline, const char *s, const XftColor *color){
-    XftDrawStringUtf8(xdraw, color, font, x, baseline, (const FcChar8 *)s, (int)strlen(s));
+    drawTextF(font, x, baseline, s, color);
 }
 
 /* baseline that vertically centers text inside a box of height h at y */
@@ -155,104 +171,166 @@ centerBaseline(int y, int h){
 }
 
 static void
-drawButton(const Hit *h, const char *label, int primary){
-    int is_pressed = (pressed == h->id);
-    unsigned long face = primary ? col_accent : col_bg;
-    const XftColor *text = primary ? &xc_white : &xc_fg;
-    if (is_pressed) { face = primary ? col_fg : col_border; }
+fillRect(int x, int y, int w, int h, unsigned long color){
+    XSetForeground(disp, gc, color);
+    XFillRectangle(disp, buf, gc, x, y, w, h);
+}
 
-    XSetForeground(disp, gc, face);
-    XFillRectangle(disp, win, gc, h->x, h->y, h->w, h->h);
-    XSetForeground(disp, gc, primary ? col_accent : col_border);
-    XDrawRectangle(disp, win, gc, h->x, h->y, h->w - 1, h->h - 1);
+static void
+fillCircle(int x, int y, int d, unsigned long color){
+    XSetForeground(disp, gc, color);
+    XFillArc(disp, buf, gc, x, y, d, d, 0, 360 * 64);
+}
+
+static void
+fillRound(int x, int y, int w, int h, int r, unsigned long color){
+    if (r * 2 > h) { r = h / 2; }
+    if (r * 2 > w) { r = w / 2; }
+    if (r <= 0) { fillRect(x, y, w, h, color); return; }
+    fillRect(x + r, y, w - 2 * r, h, color);
+    fillRect(x, y + r, w, h - 2 * r, color);
+    fillCircle(x, y, 2 * r, color);
+    fillCircle(x + w - 2 * r, y, 2 * r, color);
+    fillCircle(x, y + h - 2 * r, 2 * r, color);
+    fillCircle(x + w - 2 * r, y + h - 2 * r, 2 * r, color);
+}
+
+/* rounded box with a 1px border */
+static void
+roundBox(int x, int y, int w, int h, int r, unsigned long face, unsigned long border){
+    fillRound(x, y, w, h, r, border);
+    fillRound(x + 1, y + 1, w - 2, h - 2, r - 1, face);
+}
+
+static void
+drawCard(int x, int y, int w, int h){
+    roundBox(x, y, w, h, 10, col_card, col_border);
+}
+
+static void
+drawSeparator(int y){
+    fillRect(28, y, 304, 1, col_sep);
+}
+
+static void
+drawButton(const Hit *h, const char *label, int primary, int enabled){
+    int is_pressed = enabled && pressed == h->id;
+    int is_hover   = enabled && hover == h->id;
+    unsigned long face, edge;
+
+    if (primary) {
+        face = is_pressed ? col_accent_press : is_hover ? col_accent_hover : col_accent;
+        edge = face;
+    } else {
+        face = is_pressed ? col_btn_press : is_hover ? col_btn_hover : col_btn;
+        edge = col_border;
+    }
+    roundBox(h->x, h->y, h->w, h->h, 7, face, edge);
 
     int tw = textWidth(label);
+    const XftColor *text = !enabled ? &xc_muted : primary ? &xc_white : &xc_fg;
     drawText(h->x + (h->w - tw) / 2, centerBaseline(h->y, h->h), label, text);
 }
 
 static void
 draw(void){
-    char buf[16];
+    char tbuf[16];
 
-    XSetForeground(disp, gc, col_bg);
-    XFillRectangle(disp, win, gc, 0, 0, WIN_W, WIN_H);
+    fillRect(0, 0, WIN_W, WIN_H, col_bg);
 
-    /* heading */
-    XSetForeground(disp, gc, col_fg);
-    drawText(20, 28, "What do you want to capture?", &xc_fg);
-
-    /* radio buttons */
+    /* ---- what to capture ---- */
+    drawTextF(font_small, 20, 26, "WHAT TO CAPTURE", &xc_muted);
+    drawCard(16, 34, 328, 102);
+    drawSeparator(68);
+    drawSeparator(102);
     for (int i = 0; i < MODE_COUNT; i++) {
         const Hit *h = findHit(HIT_MODE0 + i);
-        int cy = h->y + (h->h - 14) / 2;
-        XSetForeground(disp, gc, (mode == i) ? col_accent : col_border);
-        XDrawArc(disp, win, gc, 20, cy, 14, 14, 0, 360 * 64);
+        int cy = h->y + (h->h - 16) / 2;
         if (mode == i) {
-            XFillArc(disp, win, gc, 24, cy + 4, 7, 7, 0, 360 * 64);
+            fillCircle(30, cy, 16, col_accent);
+            fillCircle(35, cy + 5, 6, col_white);
+        } else {
+            fillCircle(30, cy, 16, (hover == h->id) ? col_accent : col_border);
+            fillCircle(31, cy + 1, 14, col_card);
         }
-        XSetForeground(disp, gc, col_fg);
-        drawText(44, centerBaseline(h->y, h->h), mode_label[i], &xc_fg);
+        drawText(56, centerBaseline(h->y, h->h), mode_label[i], &xc_fg);
     }
 
-    /* delay row */
-    const Hit *minus = findHit(HIT_MINUS);
-    const Hit *plus  = findHit(HIT_PLUS);
-    XSetForeground(disp, gc, col_fg);
-    drawText(20, centerBaseline(minus->y, minus->h), "Delay:", &xc_fg);
-    drawButton(minus, "-", 0);
-    drawButton(plus, "+", 0);
+    /* ---- options ---- */
+    drawTextF(font_small, 20, 162, "OPTIONS", &xc_muted);
+    drawCard(16, 170, 328, 178);
+    drawSeparator(210);
+    drawSeparator(250);
+    drawSeparator(314);
 
-    snprintf(buf, sizeof(buf), delay == 0 ? "none" : "%d s", delay);
-    int vx0 = minus->x + minus->w;
-    int vw  = plus->x - vx0;
-    int tw  = textWidth(buf);
-    XSetForeground(disp, gc, col_fg);
-    drawText(vx0 + (vw - tw) / 2, centerBaseline(minus->y, minus->h), buf, &xc_fg);
+    /* delay row: label on the left, [-] value [+] on the right */
+    {
+        const Hit *minus = findHit(HIT_MINUS);
+        const Hit *plus  = findHit(HIT_PLUS);
+        drawText(28, centerBaseline(170, 40), "Delay", &xc_fg);
+        drawButton(minus, "\xE2\x88\x92", 0, delay > 0);
+        drawButton(plus, "+", 0, delay < MAX_DELAY);
 
-    /* format row: the selected format is drawn as the highlighted button */
-    XSetForeground(disp, gc, col_fg);
-    drawText(20, centerBaseline(findHit(HIT_FMT0)->y, findHit(HIT_FMT0)->h), "Format:", &xc_fg);
-    for (int i = 0; i < FMT_COUNT; i++) {
-        drawButton(findHit(HIT_FMT0 + i), fmt_label[i], format == i);
+        snprintf(tbuf, sizeof(tbuf), delay == 0 ? "none" : "%d s", delay);
+        int vx0 = minus->x + minus->w;
+        int vw  = plus->x - vx0;
+        drawText(vx0 + (vw - textWidth(tbuf)) / 2, centerBaseline(minus->y, minus->h), tbuf, &xc_fg);
     }
 
-    /* folder row: open / change / back to the default, and the current folder below */
+    /* format row: segmented control, the selected format is the highlighted segment */
+    {
+        const Hit *f0 = findHit(HIT_FMT0);
+        drawText(28, centerBaseline(210, 40), "Format", &xc_fg);
+        fillRound(f0->x, f0->y, FMT_COUNT * f0->w, f0->h, 8, col_track);
+        for (int i = 0; i < FMT_COUNT; i++) {
+            const Hit *h = findHit(HIT_FMT0 + i);
+            int sel = (format == i);
+            if (sel) {
+                fillRound(h->x + 2, h->y + 2, h->w - 4, h->h - 4, 6,
+                          pressed == h->id ? col_accent_press : hover == h->id ? col_accent_hover : col_accent);
+            } else if (hover == h->id || pressed == h->id) {
+                fillRound(h->x + 2, h->y + 2, h->w - 4, h->h - 4, 6,
+                          pressed == h->id ? col_btn_press : col_btn_hover);
+            }
+            drawText(h->x + (h->w - textWidth(fmt_label[i])) / 2, centerBaseline(h->y, h->h),
+                     fmt_label[i], sel ? &xc_white : &xc_fg);
+        }
+    }
+
+    /* folder row: label + open / change / default buttons, the current folder below */
     {
         const Hit *o = findHit(HIT_OPENDIR);
         char pbuf[1100];
-        XSetForeground(disp, gc, col_fg);
-        drawText(20, centerBaseline(o->y, o->h), "Folder:", &xc_fg);
-        drawButton(o, "Open", 0);
-        drawButton(findHit(HIT_CHGDIR), "Change\xE2\x80\xA6", 0);
-        drawButton(findHit(HIT_DEFDIR), "Default", 0);
-        fitText(save_dir[0] ? save_dir : "Default (your Pictures folder)", WIN_W - 40, pbuf, sizeof(pbuf));
-        drawText(20, o->y + o->h + 16, pbuf, &xc_fg);
+        drawText(28, centerBaseline(o->y, o->h), "Folder", &xc_fg);
+        drawButton(o, "Open", 0, 1);
+        drawButton(findHit(HIT_CHGDIR), "Change\xE2\x80\xA6", 0, 1);
+        drawButton(findHit(HIT_DEFDIR), "Default", 0, save_dir[0] != '\0');
+        fitText(save_dir[0] ? save_dir : "Default (your Pictures folder)", 304, pbuf, sizeof(pbuf));
+        drawText(28, o->y + o->h + 17, pbuf, &xc_muted);
     }
 
     /* re-open checkbox */
     {
         const Hit *h = findHit(HIT_REOPEN);
-        int cy = h->y + (h->h - 14) / 2;
-        XSetForeground(disp, gc, reopen ? col_accent : col_bg);
-        XFillRectangle(disp, win, gc, 20, cy, 14, 14);
-        XSetForeground(disp, gc, reopen ? col_accent : col_border);
-        XDrawRectangle(disp, win, gc, 20, cy, 14, 14);
+        int cy = h->y + (h->h - 16) / 2;
+        roundBox(30, cy, 16, 16, 4, reopen ? col_accent : col_card,
+                 reopen ? col_accent : (hover == h->id ? col_accent : col_border));
         if (reopen) {
             XSetForeground(disp, gc, col_white);
             XSetLineAttributes(disp, gc, 2, LineSolid, CapRound, JoinRound);
-            XDrawLine(disp, win, gc, 23, cy + 7, 26, cy + 10);
-            XDrawLine(disp, win, gc, 26, cy + 10, 31, cy + 4);
+            XDrawLine(disp, buf, gc, 34, cy + 8, 37, cy + 11);
+            XDrawLine(disp, buf, gc, 37, cy + 11, 42, cy + 5);
             XSetLineAttributes(disp, gc, 0, LineSolid, CapButt, JoinMiter);
         }
-        XSetForeground(disp, gc, col_fg);
-        drawText(44, centerBaseline(h->y, h->h), "Re-open this window after capture", &xc_fg);
+        drawText(56, centerBaseline(h->y, h->h), "Re-open this window after capture", &xc_fg);
     }
 
-    /* action buttons */
-    drawButton(findHit(HIT_CANCEL), "Cancel", 0);
-    drawButton(findHit(HIT_CAPTURE), "Capture", 1);
-    drawButton(findHit(HIT_CAPTURE_OPEN), "Capture & Open", 0);
+    /* ---- action buttons ---- */
+    drawButton(findHit(HIT_CANCEL), "Cancel", 0, 1);
+    drawButton(findHit(HIT_CAPTURE_OPEN), "Capture & Open", 0, 1);
+    drawButton(findHit(HIT_CAPTURE), "Capture", 1, 1);
 
+    XCopyArea(disp, buf, win, gc, 0, 0, WIN_W, WIN_H, 0, 0);
     XFlush(disp);
 }
 
@@ -511,11 +589,23 @@ main(int argc, char *argv[]){
         return 1;
     }
 
-    col_bg     = allocColor("#f6f5f4", WhitePixel(disp, scr));
-    col_fg     = allocColor("#2e3436", BlackPixel(disp, scr));
-    col_border = allocColor("#b8b6b2", BlackPixel(disp, scr));
-    col_accent = allocColor("#3584e4", BlackPixel(disp, scr));
-    col_white  = allocColor("#ffffff", WhitePixel(disp, scr));
+    col_bg           = allocColor("#efeeec", WhitePixel(disp, scr));
+    col_fg           = allocColor("#2e3436", BlackPixel(disp, scr));
+    col_border       = allocColor("#cdcbc7", BlackPixel(disp, scr));
+    col_accent       = allocColor("#3584e4", BlackPixel(disp, scr));
+    col_accent_hover = allocColor("#4f94e8", BlackPixel(disp, scr));
+    col_accent_press = allocColor("#1c6fd6", BlackPixel(disp, scr));
+    col_white        = allocColor("#ffffff", WhitePixel(disp, scr));
+    col_card         = allocColor("#ffffff", WhitePixel(disp, scr));
+    col_sep          = allocColor("#e9e8e6", WhitePixel(disp, scr));
+    col_track        = allocColor("#e4e2df", WhitePixel(disp, scr));
+    col_btn          = allocColor("#f8f7f6", WhitePixel(disp, scr));
+    col_btn_hover    = allocColor("#ecebe9", WhitePixel(disp, scr));
+    col_btn_press    = allocColor("#dcdad6", WhitePixel(disp, scr));
+
+    font_small = XftFontOpenName(disp, scr, "sans:bold:size=8");
+    if (font_small == NULL) { font_small = font; }
+    cur_hand = XCreateFontCursor(disp, XC_hand2);
 
     int sw = DisplayWidth(disp, scr);
     int sh = DisplayHeight(disp, scr);
@@ -533,6 +623,12 @@ main(int argc, char *argv[]){
         XFree(ch);
     }
 
+    /* window icon (shown in the title bar / taskbar), embedded so it works without an installed icon theme */
+    Atom net_wm_icon = XInternAtom(disp, "_NET_WM_ICON", False);
+    XChangeProperty(disp, win, net_wm_icon, XA_CARDINAL, 32, PropModeReplace,
+                    (const unsigned char *)icon_data,
+                    (int)(sizeof(icon_data) / sizeof(icon_data[0])));
+
     /* fixed size window */
     XSizeHints *sz = XAllocSizeHints();
     if (sz) {
@@ -547,11 +643,15 @@ main(int argc, char *argv[]){
     XSetWMProtocols(disp, win, &wm_delete, 1);
 
     gc = XCreateGC(disp, win, 0, NULL);
-    xdraw = XftDrawCreate(disp, win, DefaultVisual(disp, scr), DefaultColormap(disp, scr));
+    buf = XCreatePixmap(disp, win, WIN_W, WIN_H, DefaultDepth(disp, scr));
+    xdraw = XftDrawCreate(disp, buf, DefaultVisual(disp, scr), DefaultColormap(disp, scr));
+    XSetWindowBackgroundPixmap(disp, win, buf);
     allocXftColor(&xc_fg, 0x2e2e, 0x3434, 0x3636);
     allocXftColor(&xc_white, 0xffff, 0xffff, 0xffff);
+    allocXftColor(&xc_muted, 0x7777, 0x7676, 0x7b7b);
 
-    XSelectInput(disp, win, ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask);
+    XSelectInput(disp, win, ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask |
+                 PointerMotionMask | LeaveWindowMask);
     XMapWindow(disp, win);
 
     XEvent ev;
@@ -580,6 +680,16 @@ main(int argc, char *argv[]){
                     draw();
                 }
                 break;
+            case MotionNotify:
+            case LeaveNotify: {
+                int id = (ev.type == LeaveNotify) ? HIT_NONE : hitAt(ev.xmotion.x, ev.xmotion.y);
+                if (id != hover) {
+                    hover = id;
+                    XDefineCursor(disp, win, id != HIT_NONE ? cur_hand : None);
+                    draw();
+                }
+                break;
+            }
             case ClientMessage:
                 if ((Atom)ev.xclient.data.l[0] == wm_delete) {
                     XCloseDisplay(disp);

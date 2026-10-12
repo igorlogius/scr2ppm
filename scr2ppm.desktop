@@ -7,6 +7,7 @@ TryExec=scr2ppm-wrapper
 Exec=scr2ppm-wrapper
 Icon=scr2ppm
 Terminal=false
+StartupWMClass=scr2ppm
 Categories=Utility
 Actions=Screen;Window;Area;Screen10;Window10;Area10;
 
