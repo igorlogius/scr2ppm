@@ -3,9 +3,11 @@
 <component type="desktop-application">
     <id>io.github.igorlogius.scr2ppm</id>
     <metadata_license>0BSD</metadata_license>
-    <project_license>MIT</project_license>
+    <project_license>Unlicense</project_license>
     <content_rating type="oars-1.1" />
-    <developer_name>igorlogius</developer_name>
+    <developer id="io.github.igorlogius">
+        <name>igorlogius</name>
+    </developer>
     <categories>
         <category>Utility</category>
     </categories>
@@ -17,7 +19,7 @@
         <keyword>x11</keyword>
     </keywords>
     <name>Screen2PPM</name>
-    <summary>Take quick screenshots</summary>
+    <summary>Quickly take screenshots</summary>
     <description>
         <p>Screen2PPM takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>
         <p>Start the app to get a small options window where you can choose:</p>
