@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 
 <component type="desktop-application">
     <id>io.github.igorlogius.scr2ppm</id>
@@ -45,6 +45,12 @@
         <screenshot type="default">
             <caption>Choose what to capture and an optional delay</caption>
             <image type="source" width="128" height="128">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-gui.png</image>
+            <image type="source" xml:lang="en" width="128" height="128">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-gui.png</image>
+        </screenshot>
+        <screenshot type="default">
+            <caption>Command line usage</caption>
+            <image type="source" width="779" height="554">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-cli.png</image>
+            <image type="source" xml:lang="en" width="779" height="554">https://github.com/igorlogius/scr2ppm/raw/main/scr2ppm-cli.png</image>
         </screenshot>
     </screenshots>
 
