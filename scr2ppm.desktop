@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Screen2PPM
+Name=Scr2ppm
 Comment=Quick take screenshots
 TryExec=scr2ppm-wrapper
 Exec=scr2ppm-wrapper

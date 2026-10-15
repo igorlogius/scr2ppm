@@ -18,10 +18,10 @@
         <keyword>ppm</keyword>
         <keyword>x11</keyword>
     </keywords>
-    <name>Screen2ppm</name>
+    <name>Scr2ppm</name>
     <summary>Quickly take screenshots</summary>
     <description>
-        <p>Screen2PPM takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>
+        <p>Scr2ppm takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>
         <p>Start the app to get a small options window where you can choose:</p>
         <ul>
             <li>what to capture: the entire screen, a window, or an area</li>
