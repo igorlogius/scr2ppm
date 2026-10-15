@@ -23,7 +23,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="6.8279999"
      inkscape:cx="25.336849"
-     inkscape:cy="70.00586"
+     inkscape:cy="70.152315"
      inkscape:window-width="2507"
      inkscape:window-height="1440"
      inkscape:window-x="0"
@@ -42,7 +42,7 @@
        y1="20.954839"
        x2="10.737377"
        y2="109.43082"
-       gradientTransform="matrix(1.2634768,0,0,0.9724873,-5.3136429,-11.16566)"
+       gradientTransform="matrix(1.2965832,0,0,1.0955564,-7.2801318,-17.794935)"
        gradientUnits="userSpaceOnUse">
       <stop
          offset="0"
@@ -59,7 +59,7 @@
        y1="30.96856"
        x2="15.741772"
        y2="102.81562"
-       gradientTransform="matrix(1.3444245,0,0,0.91393381,-5.3136429,-11.16566)"
+       gradientTransform="matrix(1.3796519,0,0,1.029593,-7.2801318,-17.794935)"
        gradientUnits="userSpaceOnUse">
       <stop
          offset="0"
@@ -73,82 +73,82 @@
   </defs>
   <!-- stand -->
   <path
-     d="m 51.122687,92.99017 h 26.047536 l 4.341257,13.58555 H 46.78143 Z"
+     d="m 50.634975,99.541915 h 26.730049 l 4.455009,15.304825 H 46.179966 Z"
      fill="#62a0ea"
      id="path4"
-     style="stroke-width:1.10847" />
+     style="stroke-width:1.19184" />
   <rect
-     x="31.587034"
-     y="104.31143"
-     width="65.118843"
-     height="9.0570288"
-     rx="4.3412561"
+     x="30.587439"
+     y="112.29589"
+     width="66.825127"
+     height="10.203205"
+     rx="4.455008"
      fill="#3584e4"
      id="rect4"
-     style="stroke-width:1.10847" />
+     style="stroke-width:1.19184" />
   <!-- monitor body (spans the full width of the grid square) -->
   <rect
-     x="8.2527828"
-     y="9.2126541"
-     width="111.78735"
-     height="86.041779"
-     rx="10.853141"
+     x="6.6417694"
+     y="5.1622734"
+     width="114.71647"
+     height="96.93045"
+     rx="11.137521"
      fill="url(#body)"
      id="rect5"
-     style="fill:url(#body);stroke-width:1.10847" />
+     style="fill:url(#body);stroke-width:1.19184" />
   <!-- screen -->
   <rect
-     x="15.849981"
-     y="17.137554"
-     width="96.592957"
-     height="65.66346"
-     rx="4.3412561"
+     x="14.438034"
+     y="14.090078"
+     width="99.12394"
+     height="73.973236"
+     rx="4.455008"
      fill="url(#screen)"
      id="rect6"
-     style="fill:url(#screen);stroke-width:1.10847" />
+     style="fill:url(#screen);stroke-width:1.19184" />
   <!-- capture selection: red border, drained clockwise to blue -->
   <rect
-     x="28.331091"
-     y="28.458841"
-     width="71.630722"
-     height="43.020889"
+     x="27.246181"
+     y="26.844086"
+     width="73.507629"
+     height="48.465225"
      fill="#0a84ff"
      fill-opacity="0.08"
      id="rect7"
-     style="stroke-width:1.10847" />
+     style="stroke-width:1.19184" />
   <rect
-     x="28.331091"
-     y="28.458841"
-     width="71.630722"
-     height="43.020889"
+     x="27.246181"
+     y="26.844086"
+     width="73.507629"
+     height="48.465225"
      fill="none"
      stroke="#ff3b30"
-     stroke-width="5.54238"
+     stroke-width="5.9592"
      id="rect8" />
   <rect
-     x="28.331091"
-     y="28.458841"
-     width="71.630722"
-     height="43.020889"
+     x="27.246181"
+     y="26.844086"
+     width="73.507629"
+     height="48.465225"
      fill="none"
      stroke="#0a84ff"
-     stroke-width="5.54238"
+     stroke-width="5.9592"
      stroke-dasharray="81, 127"
      id="rect9" />
   <rect
-     x="25.617807"
-     y="25.628519"
-     width="5.4265704"
-     height="5.6606426"
+     x="24.461802"
+     y="23.655582"
+     width="5.5687604"
+     height="6.3770027"
      fill="#0a84ff"
      id="rect10"
-     style="stroke-width:1.10847" />
+     style="stroke-width:1.19184" />
   <!-- mouse pointer dragging the selection -->
   <path
-     d="m 95.620561,65.819084 v 24.906829 l 6.511879,-6.226708 4.88392,11.321286 4.34125,-2.037831 -4.8839,-10.981648 h 8.68251 z"
+     d="m 96.298808,68.932302 v 28.058814 l 6.682512,-7.014706 5.01189,12.754 4.455,-2.29571 -5.01187,-12.37139 h 8.91001 z"
      fill="#ffffff"
      stroke="#26456e"
-     stroke-width="2.77118"
+     stroke-width="2.97958"
      stroke-linejoin="round"
      id="path10" />
 </svg>
