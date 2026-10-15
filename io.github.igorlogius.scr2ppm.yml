@@ -56,10 +56,12 @@ modules:
       - cc scr2ppm.c -lX11 -lxcb -lXau -lXdmcp -o scr2ppm
       - cc scr2ppm-gui.c $(pkg-config --cflags --libs xft) -lX11 -o scr2ppm-gui
       - cc ppm2img.c -lm -o ppm2img
+      - cc scr2ppm-clip.c -lX11 -o scr2ppm-clip
       - cc choosedir.c $(pkg-config --cflags --libs gio-2.0) -o scr2ppm-choosedir
       - install -D scr2ppm /app/bin/scr2ppm
       - install -D scr2ppm-gui /app/bin/scr2ppm-gui
       - install -D ppm2img /app/bin/ppm2img
+      - install -D scr2ppm-clip /app/bin/scr2ppm-clip
       - install -D scr2ppm-choosedir /app/bin/scr2ppm-choosedir
       - install -D scr2ppm-wrapper /app/bin/scr2ppm-wrapper
       - install -D scr2ppm.desktop /app/share/applications/scr2ppm.desktop

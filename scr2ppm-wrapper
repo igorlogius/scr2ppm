@@ -6,7 +6,7 @@ usage() {
 scr2ppm-wrapper - take a screenshot and save it in your Pictures folder
 
 usage: scr2ppm-wrapper                                (no options: open the options window)
-       scr2ppm-wrapper -[s|w|a] [-d SECONDS] [-f FORMAT] [-D FOLDER] [-o] [-r]
+       scr2ppm-wrapper -[s|w|a] [-d SECONDS] [-f FORMAT] [-D FOLDER] [-o] [-c] [-n] [-r]
        scr2ppm-wrapper --open-dir [-D FOLDER]
        scr2ppm-wrapper --choose-dir
 
@@ -24,6 +24,8 @@ output:
   -D FOLDER     save the screenshot in this folder instead of the Pictures folder
                 (falls back to the Pictures folder if it can't be written to)
   -o            open the screenshot afterwards (xdg-open)
+  -c            also copy the screenshot to the clipboard (always as PNG)
+  -n            don't save a file (only makes sense together with -c)
   -r            show the options window again after the capture
 
 folders:
@@ -33,7 +35,7 @@ folders:
 
   -h, --help    show this help
 
-The options window remembers the capture mode, format, delay, folder and
+The options window remembers the capture mode, save/copy/show choices, format, delay, folder and
 re-open setting in $XDG_CONFIG_HOME/scr2ppm/gui.conf. These saved settings only apply
 to the options window, the command line always uses the defaults above.
 
@@ -42,6 +44,8 @@ examples:
   scr2ppm-wrapper -a -f png           # select an area, save as PNG
   scr2ppm-wrapper -w -d 5 -f jpg -o   # window after 5 s as JPG, then open it
   scr2ppm-wrapper -s -D ~/Shots       # whole screen into ~/Shots
+  scr2ppm-wrapper -a -c               # select an area, save it and copy it to the clipboard
+  scr2ppm-wrapper -a -n -c            # select an area, only copy it to the clipboard
 EOF
 }
 
@@ -101,6 +105,8 @@ choose_dir() {
 # -o (open afterwards), -r (show the options window again afterwards), -f <ppm|png|jpg> (output format),
 # -D <folder> (save folder) and --open-dir / --choose-dir are handled here, everything else goes to scr2ppm
 OPEN=0
+COPY=0
+SAVE=1
 REOPEN=0
 FORMAT=ppm
 SAVE_DIR=
@@ -110,6 +116,8 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help) usage; exit 0 ;;
         -o) OPEN=1 ;;
+        -c) COPY=1 ;;
+        -n) SAVE=0 ;;
         -r) REOPEN=1 ;;
         -f) shift || true; FORMAT="${1:-ppm}" ;;
         -D) shift || true; SAVE_DIR="${1:-}" ;;
@@ -132,7 +140,10 @@ case "$ACTION" in
         ;;
 esac
 
-DIR="$(resolve_dir)"
+if [ "$SAVE" -eq 0 ] && [ "$COPY" -eq 0 ]; then
+    echo "scr2ppm: nothing to do, -n (don't save) needs -c (copy to the clipboard)" >&2
+    exit 1
+fi
 
 case "$FORMAT" in
     ppm) EXT=ppm ;;
@@ -141,15 +152,37 @@ case "$FORMAT" in
     *) echo "scr2ppm: unknown format '$FORMAT' (use ppm, png or jpg)" >&2; exit 1 ;;
 esac
 
-FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).$EXT"
+FILE=""
+if [ "$SAVE" -eq 1 ]; then
+    DIR="$(resolve_dir)"
+    FILE="$DIR/Screenshot-$(date +%F_%H-%M-%S).$EXT"
+fi
+
 STATUS=0
-if [ "$FORMAT" = "ppm" ]; then
+if [ "$COPY" -eq 1 ]; then
+    # capture once as PPM, then derive the saved file (if any) and the clipboard PNG from it
+    TMP="$(mktemp)"
+    if scr2ppm ${ARGS[@]+"${ARGS[@]}"} > "$TMP"; then
+        if [ "$SAVE" -eq 1 ]; then
+            if [ "$FORMAT" = "ppm" ]; then
+                cp "$TMP" "$FILE" || STATUS=1
+            else
+                ppm2img "$FORMAT" < "$TMP" > "$FILE" || STATUS=1
+            fi
+        fi
+        ppm2img png < "$TMP" | scr2ppm-clip || echo "scr2ppm: could not copy to the clipboard" >&2
+    else
+        STATUS=1
+    fi
+    rm -f "$TMP"
+    if [ "$STATUS" -ne 0 ] && [ -n "$FILE" ]; then rm -f "$FILE"; fi
+elif [ "$FORMAT" = "ppm" ]; then
     scr2ppm ${ARGS[@]+"${ARGS[@]}"} > "$FILE" || { rm -f "$FILE"; STATUS=1; }
 else
     scr2ppm ${ARGS[@]+"${ARGS[@]}"} | ppm2img "$FORMAT" > "$FILE" || { rm -f "$FILE"; STATUS=1; }
 fi
 
-if [ "$STATUS" -eq 0 ] && [ "$OPEN" -eq 1 ]; then
+if [ "$STATUS" -eq 0 ] && [ "$OPEN" -eq 1 ] && [ -n "$FILE" ]; then
     xdg-open "$FILE" >/dev/null 2>&1 || echo "scr2ppm: could not open $FILE" >&2
 fi
 

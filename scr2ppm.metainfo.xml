@@ -58,6 +58,11 @@
     <url type="bugtracker">https://github.com/igorlogius/scr2ppm/issues/new/choose</url>
 
     <releases>
+        <release version="2.1.0" date="2026-10-10">
+            <description>
+                <p>Copy to clipboard option added</p>
+            </description>
+        </release>
         <release version="2.0.0" date="2026-10-10">
             <description>
                 <p>Area selection now uses slop, which gives a clearer and more reliable selection rectangle</p>

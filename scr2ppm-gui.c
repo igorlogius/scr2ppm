@@ -27,12 +27,12 @@
 #include "scr2ppm-icon.h"
 
 #define WIN_W      360
-#define WIN_H      412
+#define WIN_H      510
 #define MAX_DELAY  60
 
 enum { MODE_SCREEN, MODE_WINDOW, MODE_AREA, MODE_COUNT };
 enum { FMT_PPM, FMT_PNG, FMT_JPG, FMT_COUNT };
-enum { HIT_NONE, HIT_MODE0, HIT_MODE1, HIT_MODE2, HIT_MINUS, HIT_PLUS, HIT_FMT0, HIT_FMT1, HIT_FMT2, HIT_OPENDIR, HIT_CHGDIR, HIT_DEFDIR, HIT_REOPEN, HIT_CANCEL, HIT_CAPTURE, HIT_CAPTURE_OPEN };
+enum { HIT_NONE, HIT_MODE0, HIT_MODE1, HIT_MODE2, HIT_MINUS, HIT_PLUS, HIT_SAVE, HIT_FMT0, HIT_FMT1, HIT_FMT2, HIT_OPENDIR, HIT_CHGDIR, HIT_DEFDIR, HIT_COPY, HIT_SHOW, HIT_REOPEN, HIT_CANCEL, HIT_CAPTURE };
 
 typedef struct { int x, y, w, h, id; } Hit;
 
@@ -53,16 +53,18 @@ static const Hit hits[] = {
     {  16, 102, 328, 34, HIT_MODE2   },
     { 186, 176,  30, 28, HIT_MINUS   },
     { 302, 176,  30, 28, HIT_PLUS    },
-    { 146, 216,  62, 28, HIT_FMT0    },
-    { 208, 216,  62, 28, HIT_FMT1    },
-    { 270, 216,  62, 28, HIT_FMT2    },
-    { 132, 256,  52, 28, HIT_OPENDIR },
-    { 190, 256,  72, 28, HIT_CHGDIR  },
-    { 268, 256,  64, 28, HIT_DEFDIR  },
-    {  16, 314, 328, 34, HIT_REOPEN  },
-    {  16, 366,  76, 32, HIT_CANCEL       },
-    { 116, 366, 130, 32, HIT_CAPTURE_OPEN },
-    { 254, 366,  90, 32, HIT_CAPTURE      },
+    {  16, 210, 328, 34, HIT_SAVE    },
+    { 146, 250,  62, 28, HIT_FMT0    },
+    { 208, 250,  62, 28, HIT_FMT1    },
+    { 270, 250,  62, 28, HIT_FMT2    },
+    { 132, 290,  52, 28, HIT_OPENDIR },
+    { 190, 290,  72, 28, HIT_CHGDIR  },
+    { 268, 290,  64, 28, HIT_DEFDIR  },
+    {  16, 348, 328, 34, HIT_COPY    },
+    {  16, 382, 328, 34, HIT_SHOW    },
+    {  16, 416, 328, 34, HIT_REOPEN  },
+    {  16, 466,  76, 32, HIT_CANCEL  },
+    { 254, 466,  90, 32, HIT_CAPTURE },
 };
 #define N_HITS ((int)(sizeof(hits) / sizeof(hits[0])))
 
@@ -84,6 +86,9 @@ static int mode = MODE_AREA;
 static int delay = 0;
 static int format = FMT_PPM;
 static char save_dir[1024];   /* empty = the default Pictures folder (passed on as -D) */
+static int do_save = 1;   /* save the screenshot to a file */
+static int do_copy = 0;   /* copy the screenshot to the clipboard (as PNG) */
+static int do_show = 0;   /* open the saved screenshot afterwards (needs do_save) */
 static int reopen = 0;   /* re-open this window after a capture (passed on as -r) */
 static int pressed = HIT_NONE;
 static int hover = HIT_NONE;
@@ -218,7 +223,10 @@ drawButton(const Hit *h, const char *label, int primary, int enabled){
     int is_hover   = enabled && hover == h->id;
     unsigned long face, edge;
 
-    if (primary) {
+    if (primary && !enabled) {
+        face = col_track;
+        edge = col_border;
+    } else if (primary) {
         face = is_pressed ? col_accent_press : is_hover ? col_accent_hover : col_accent;
         edge = face;
     } else {
@@ -230,6 +238,31 @@ drawButton(const Hit *h, const char *label, int primary, int enabled){
     int tw = textWidth(label);
     const XftColor *text = !enabled ? &xc_muted : primary ? &xc_white : &xc_fg;
     drawText(h->x + (h->w - tw) / 2, centerBaseline(h->y, h->h), label, text);
+}
+
+/* checkbox row (the whole row is clickable); a disabled one is greyed out and shown unchecked */
+static void
+drawCheck(int id, const char *label, int on, int enabled){
+    const Hit *h = findHit(id);
+    int cy = h->y + (h->h - 16) / 2;
+    int hov = enabled && hover == id;
+    unsigned long face = on ? (enabled ? col_accent : col_border) : col_card;
+    unsigned long edge = on ? face : (hov ? col_accent : col_border);
+
+    roundBox(30, cy, 16, 16, 4, face, edge);
+    if (on) {
+        XSetForeground(disp, gc, col_white);
+        XSetLineAttributes(disp, gc, 2, LineSolid, CapRound, JoinRound);
+        XDrawLine(disp, buf, gc, 34, cy + 8, 37, cy + 11);
+        XDrawLine(disp, buf, gc, 37, cy + 11, 42, cy + 5);
+        XSetLineAttributes(disp, gc, 0, LineSolid, CapButt, JoinMiter);
+    }
+    drawText(56, centerBaseline(h->y, h->h), label, enabled ? &xc_fg : &xc_muted);
+}
+
+static int
+canCapture(void){
+    return do_save || do_copy;
 }
 
 static void
@@ -258,10 +291,13 @@ draw(void){
 
     /* ---- options ---- */
     drawTextF(font_small, 20, 162, "OPTIONS", &xc_muted);
-    drawCard(16, 170, 328, 178);
+    drawCard(16, 170, 328, 280);
     drawSeparator(210);
-    drawSeparator(250);
-    drawSeparator(314);
+    drawSeparator(244);
+    drawSeparator(284);
+    drawSeparator(348);
+    drawSeparator(382);
+    drawSeparator(416);
 
     /* delay row: label on the left, [-] value [+] on the right */
     {
@@ -277,65 +313,59 @@ draw(void){
         drawText(vx0 + (vw - textWidth(tbuf)) / 2, centerBaseline(minus->y, minus->h), tbuf, &xc_fg);
     }
 
-    /* format row: segmented control, the selected format is the highlighted segment */
+    drawCheck(HIT_SAVE, "Save to file", do_save, 1);
+
+    /* format row (only used when saving): segmented control, the selected format is the highlighted segment */
     {
         const Hit *f0 = findHit(HIT_FMT0);
-        drawText(28, centerBaseline(210, 40), "Format", &xc_fg);
+        drawText(28, centerBaseline(244, 40), "Format", do_save ? &xc_fg : &xc_muted);
         fillRound(f0->x, f0->y, FMT_COUNT * f0->w, f0->h, 8, col_track);
         for (int i = 0; i < FMT_COUNT; i++) {
             const Hit *h = findHit(HIT_FMT0 + i);
             int sel = (format == i);
             if (sel) {
                 fillRound(h->x + 2, h->y + 2, h->w - 4, h->h - 4, 6,
+                          !do_save ? col_border :
                           pressed == h->id ? col_accent_press : hover == h->id ? col_accent_hover : col_accent);
-            } else if (hover == h->id || pressed == h->id) {
+            } else if (do_save && (hover == h->id || pressed == h->id)) {
                 fillRound(h->x + 2, h->y + 2, h->w - 4, h->h - 4, 6,
                           pressed == h->id ? col_btn_press : col_btn_hover);
             }
             drawText(h->x + (h->w - textWidth(fmt_label[i])) / 2, centerBaseline(h->y, h->h),
-                     fmt_label[i], sel ? &xc_white : &xc_fg);
+                     fmt_label[i], (sel && do_save) ? &xc_white : do_save ? &xc_fg : &xc_muted);
         }
     }
 
-    /* folder row: label + open / change / default buttons, the current folder below */
+    /* folder row (only used when saving): label + open / change / default buttons, the current folder below */
     {
         const Hit *o = findHit(HIT_OPENDIR);
         char pbuf[1100];
-        drawText(28, centerBaseline(o->y, o->h), "Folder", &xc_fg);
-        drawButton(o, "Open", 0, 1);
-        drawButton(findHit(HIT_CHGDIR), "Change\xE2\x80\xA6", 0, 1);
-        drawButton(findHit(HIT_DEFDIR), "Default", 0, save_dir[0] != '\0');
+        drawText(28, centerBaseline(o->y, o->h), "Folder", do_save ? &xc_fg : &xc_muted);
+        drawButton(o, "Open", 0, do_save);
+        drawButton(findHit(HIT_CHGDIR), "Change\xE2\x80\xA6", 0, do_save);
+        drawButton(findHit(HIT_DEFDIR), "Default", 0, do_save && save_dir[0] != '\0');
         fitText(save_dir[0] ? save_dir : "Default (your Pictures folder)", 304, pbuf, sizeof(pbuf));
         drawText(28, o->y + o->h + 17, pbuf, &xc_muted);
     }
 
-    /* re-open checkbox */
-    {
-        const Hit *h = findHit(HIT_REOPEN);
-        int cy = h->y + (h->h - 16) / 2;
-        roundBox(30, cy, 16, 16, 4, reopen ? col_accent : col_card,
-                 reopen ? col_accent : (hover == h->id ? col_accent : col_border));
-        if (reopen) {
-            XSetForeground(disp, gc, col_white);
-            XSetLineAttributes(disp, gc, 2, LineSolid, CapRound, JoinRound);
-            XDrawLine(disp, buf, gc, 34, cy + 8, 37, cy + 11);
-            XDrawLine(disp, buf, gc, 37, cy + 11, 42, cy + 5);
-            XSetLineAttributes(disp, gc, 0, LineSolid, CapButt, JoinMiter);
-        }
-        drawText(56, centerBaseline(h->y, h->h), "Re-open this window after capture", &xc_fg);
-    }
+    drawCheck(HIT_COPY, "Copy to clipboard", do_copy, 1);
+    drawCheck(HIT_SHOW, "Show screenshot after capture", do_show && do_save, do_save);
+    drawCheck(HIT_REOPEN, "Re-open this window after capture", reopen, 1);
 
-    /* ---- action buttons ---- */
+    /* ---- action buttons: Capture needs at least one of save / copy ---- */
     drawButton(findHit(HIT_CANCEL), "Cancel", 0, 1);
-    drawButton(findHit(HIT_CAPTURE_OPEN), "Capture & Open", 0, 1);
-    drawButton(findHit(HIT_CAPTURE), "Capture", 1, 1);
+    drawButton(findHit(HIT_CAPTURE), "Capture", 1, canCapture());
+    if (!canCapture()) {
+        const char *hint = "Select save or copy";
+        drawText(100 + (146 - textWidth(hint)) / 2, centerBaseline(466, 32), hint, &xc_muted);
+    }
 
     XCopyArea(disp, buf, win, gc, 0, 0, WIN_W, WIN_H, 0, 0);
     XFlush(disp);
 }
 
 /* the capture mode, format, delay and re-open option are remembered in $XDG_CONFIG_HOME/scr2ppm/gui.conf
- * ("mode=area", "format=png", "delay=5", "reopen=1", "dir=/path/to/folder") */
+ * ("mode=area", "format=png", "delay=5", "reopen=1", "save=1", "copy=0", "show=0", "dir=/path/to/folder") */
 static int
 configPath(char *buf, size_t len, int create_dir){
     const char *xdg = getenv("XDG_CONFIG_HOME");
@@ -376,6 +406,12 @@ loadConfig(void){
             }
         } else if (strncmp(line, "dir=", 4) == 0) {
             snprintf(save_dir, sizeof(save_dir), "%s", line + 4);
+        } else if (strncmp(line, "save=", 5) == 0) {
+            do_save = (atoi(line + 5) != 0);
+        } else if (strncmp(line, "copy=", 5) == 0) {
+            do_copy = (atoi(line + 5) != 0);
+        } else if (strncmp(line, "show=", 5) == 0) {
+            do_show = (atoi(line + 5) != 0);
         } else if (strncmp(line, "reopen=", 7) == 0) {
             reopen = (atoi(line + 7) != 0);
         } else if (strncmp(line, "delay=", 6) == 0) {
@@ -384,6 +420,7 @@ loadConfig(void){
         }
     }
     fclose(f);
+    if (!do_save && !do_copy) { do_save = 1; }   /* a capture needs at least one destination */
 }
 
 static void
@@ -392,7 +429,8 @@ saveConfig(void){
     FILE *f;
 
     if (!configPath(path, sizeof(path), 1) || (f = fopen(path, "w")) == NULL) { return; }
-    fprintf(f, "mode=%s\nformat=%s\ndelay=%d\nreopen=%d\ndir=%s\n", mode_arg[mode], fmt_arg[format], delay, reopen, save_dir);
+    fprintf(f, "mode=%s\nformat=%s\ndelay=%d\nreopen=%d\nsave=%d\ncopy=%d\nshow=%d\ndir=%s\n",
+            mode_arg[mode], fmt_arg[format], delay, reopen, do_save, do_copy, do_show, save_dir);
     fclose(f);
 }
 
@@ -413,6 +451,21 @@ setReopen(int r){
 }
 
 static void
+setSave(int v){
+    if (v != do_save) { do_save = v; saveConfig(); }
+}
+
+static void
+setCopy(int v){
+    if (v != do_copy) { do_copy = v; saveConfig(); }
+}
+
+static void
+setShow(int v){
+    if (v != do_show) { do_show = v; saveConfig(); }
+}
+
+static void
 setFormat(int f){
     if (f != format) {
         format = f;
@@ -430,12 +483,12 @@ setDelay(int d){
     }
 }
 
-/* close the window, give the compositor time to remove it, then run the wrapper;
- * open_after makes the wrapper open the saved screenshot (-o) */
+/* close the window, give the compositor time to remove it, then run the wrapper with
+ * the chosen options: -n (don't save), -c (copy to clipboard), -o (open the saved screenshot) */
 static void
-launch(int open_after){
+launch(void){
     char dbuf[16];
-    char *argv[12];
+    char *argv[14];
     int n = 0;
 
     argv[n++] = "scr2ppm-wrapper";
@@ -445,15 +498,20 @@ launch(int open_after){
         argv[n++] = "-d";
         argv[n++] = dbuf;
     }
-    if (format != FMT_PPM) {
-        argv[n++] = "-f";
-        argv[n++] = (char *)fmt_arg[format];
+    if (do_save) {
+        if (format != FMT_PPM) {
+            argv[n++] = "-f";
+            argv[n++] = (char *)fmt_arg[format];
+        }
+        if (save_dir[0]) {
+            argv[n++] = "-D";
+            argv[n++] = save_dir;
+        }
+        if (do_show) { argv[n++] = "-o"; }
+    } else {
+        argv[n++] = "-n";
     }
-    if (save_dir[0]) {
-        argv[n++] = "-D";
-        argv[n++] = save_dir;
-    }
-    if (open_after) { argv[n++] = "-o"; }
+    if (do_copy) { argv[n++] = "-c"; }
     if (reopen) { argv[n++] = "-r"; }
     argv[n] = NULL;
 
@@ -527,18 +585,20 @@ activate(int id){
         case HIT_MODE0:
         case HIT_MODE1:
         case HIT_MODE2:   setMode(id - HIT_MODE0); break;
+        case HIT_SAVE:    setSave(!do_save);      break;
+        case HIT_COPY:    setCopy(!do_copy);      break;
+        case HIT_SHOW:    if (do_save) { setShow(!do_show); } break;
         case HIT_FMT0:
         case HIT_FMT1:
-        case HIT_FMT2:    setFormat(id - HIT_FMT0); break;
-        case HIT_OPENDIR: openFolder();           break;
-        case HIT_CHGDIR:  chooseFolder();         break;
-        case HIT_DEFDIR:  resetFolder();          break;
+        case HIT_FMT2:    if (do_save) { setFormat(id - HIT_FMT0); } break;
+        case HIT_OPENDIR: if (do_save) { openFolder(); }   break;
+        case HIT_CHGDIR:  if (do_save) { chooseFolder(); } break;
+        case HIT_DEFDIR:  if (do_save) { resetFolder(); }  break;
         case HIT_REOPEN:  setReopen(!reopen);    break;
         case HIT_MINUS:   setDelay(delay - 1);    break;
         case HIT_PLUS:    setDelay(delay + 1);    break;
         case HIT_CANCEL:  XCloseDisplay(disp); exit(0);
-        case HIT_CAPTURE:      launch(0); break;
-        case HIT_CAPTURE_OPEN: launch(1); break;
+        case HIT_CAPTURE: if (canCapture()) { launch(); } break;
         default: break;
     }
 }
@@ -548,14 +608,17 @@ onKey(XKeyEvent *ke){
     KeySym ks = XLookupKeysym(ke, 0);
     switch (ks) {
         case XK_Escape:                       XCloseDisplay(disp); exit(0);
-        case XK_Return: case XK_KP_Enter:     launch((ke->state & ShiftMask) != 0); break;
+        case XK_Return: case XK_KP_Enter:     if (canCapture()) { launch(); } break;
         case XK_s: case XK_1:                 setMode(MODE_SCREEN); break;
         case XK_w: case XK_2:                 setMode(MODE_WINDOW); break;
         case XK_a: case XK_3:                 setMode(MODE_AREA);   break;
-        case XK_r:                            setReopen(!reopen); break;
-        case XK_o:                            openFolder(); return;
-        case XK_c:                            chooseFolder(); break;
-        case XK_p:                            setFormat((format + 1) % FMT_COUNT); break;
+        case XK_f:                            setSave(!do_save);    break;
+        case XK_y:                            setCopy(!do_copy);    break;
+        case XK_v:                            if (do_save) { setShow(!do_show); } break;
+        case XK_r:                            setReopen(!reopen);   break;
+        case XK_o:                            if (do_save) { openFolder(); } return;
+        case XK_c:                            if (do_save) { chooseFolder(); } break;
+        case XK_p:                            if (do_save) { setFormat((format + 1) % FMT_COUNT); } break;
         case XK_Up: case XK_plus: case XK_equal: case XK_KP_Add:
             setDelay(delay + 1); break;
         case XK_Down: case XK_minus: case XK_KP_Subtract:
