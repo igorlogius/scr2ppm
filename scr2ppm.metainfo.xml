@@ -18,7 +18,7 @@
         <keyword>ppm</keyword>
         <keyword>x11</keyword>
     </keywords>
-    <name>Screentoppm</name>
+    <name>Scr2PPM</name>
     <summary>Quickly take screenshots</summary>
     <description>
         <p>Scr2ppm takes screenshots of your whole screen, a single window, or an area you select with the mouse.</p>

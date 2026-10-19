@@ -676,7 +676,7 @@ main(int argc, char *argv[]){
                               (sw - WIN_W) / 2, (sh - WIN_H) / 2, WIN_W, WIN_H,
                               0, col_fg, col_bg);
 
-    XStoreName(disp, win, "Screen to PPM");
+    XStoreName(disp, win, "Scr2PPM");
 
     XClassHint *ch = XAllocClassHint();
     if (ch) {
